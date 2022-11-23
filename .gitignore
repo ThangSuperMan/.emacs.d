@@ -1,0 +1,14 @@
+/.tmp/
+/eln-cache/
+/elpa/
+/.org-id-locations
+/emms/
+/straight/
+/vugomars.org~
+/undo-tree-hist/
+/transient/
+/auto-save-list/
+/projectile-bookmarks.eld
+/.DS_Store
+/.custom.el
+/recentf
