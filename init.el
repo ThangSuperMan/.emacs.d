@@ -881,7 +881,7 @@ APPEND and COMPARE-FN, see `add-to-list'."
       "Ti" #'org-toggle-inline-images
       "Tl" #'org-latex-preview
       "Tn" #'org-num-mode
-      "Ts" #'phundrak/toggle-org-src-window-split
+      "Ts" #'dqv/toggle-org-src-window-split
       "Tt" #'org-show-todo-tree
       "TT" #'org-todo)
     (dqv/leader-key
@@ -957,7 +957,7 @@ APPEND and COMPARE-FN, see `add-to-list'."
   :after org
   :init (add-hook 'before-save-hook #'org-unique-id-maybe))
 
-(defun phundrak/toggle-org-src-window-split ()
+(defun dqv/toggle-org-src-window-split ()
   "This function allows the user to toggle the behavior of
 `org-edit-src-code'. If the variable `org-src-window-setup' has
 the value `split-window-right', then it will be changed to
@@ -4078,9 +4078,9 @@ Spell Commands^^           Add To Dictionary^^              Other
   "ws" #'evil-window-up
   "wr" #'evil-window-right
   "w." #'windows-adjust-size/body
-  "w-" #'split-window-below-and-focus
-  "w/" #'split-window-right-and-focus
-  "w$" #'winum-select-window-by-number
+  "ws" #'split-window-below-and-focus
+  "wv" #'split-window-right-and-focus
+  "wi" #'winum-select-window-by-number
   "w0" '(winum-select-window-0-or-10 :wk t)
   "w1" '(winum-select-window-1 :wk t)
   "w2" '(winum-select-window-2 :wk t)
@@ -4093,8 +4093,8 @@ Spell Commands^^           Add To Dictionary^^              Other
   "w9" '(winum-select-window-9 :wk t)
   "wb" #'kill-buffer-and-delete-window
   "wd" #'delete-window
-  "wo" #'other-window
-  "wD" #'delete-other-windows
+  "wO" #'other-window
+  "wo" #'delete-other-windows
   "ww" '(:ignore t :wk "writeroom")
   "ww." #'writeroom-buffer-width/body
   "www" #'writeroom-mode

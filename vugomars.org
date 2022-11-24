@@ -170,6 +170,7 @@ of indentation (Python, why…?). The minor-mode that enables that is
 ;; Set the right directory to store the native comp cache
 (add-to-list 'native-comp-eln-load-path (expand-file-name "eln-cache/" user-emacs-directory))
 #+end_src
+
 *** Stay Clean, Emacs!
 As nice as Emacs is, it isn’t very polite or clean by default: open a file, and it will create backup files in the same directory. But then, when you open your directory with your favorite file manager and see almost all of your files duplicated with a =~= appended to the filename, it looks really uncomfortable! This is why I prefer to tell Emacs to keep its backup files to itself in a directory it only will access.
 #+begin_src emacs-lisp
@@ -196,35 +197,21 @@ don’t want it!
 #+end_src
 
 *** Stay Polite, Emacs!
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Stay-Polite-Emacszp1jel6184j0
-:END:
-When asking for our opinion on something, Emacs loves asking us to
-answer by “yes” or “no”, but *in full*! That’s very rude! Fortunately,
-we can fix this.
+When asking for our opinion on something, Emacs loves asking us to answer by “yes” or “no”, but *in full*! That’s very rude! Fortunately, we can fix this.
 #+begin_src emacs-lisp
 (defalias 'yes-or-no-p 'y-or-n-p)
 #+end_src
 
-This will make Emacs ask us for either hitting the ~y~ key for “yes”, or
-the ~n~ key for “no”. Much more polite!
+This will make Emacs ask us for either hitting the ~y~ key for “yes”, or the ~n~ key for “no”. Much more polite!
 
-It is also very impolite to keep a certain version of a file in its
-buffer when said file has changed on disk. Let’s change this behavior:
+It is also very impolite to keep a certain version of a file in its buffer when said file has changed on disk. Let’s change this behavior:
 #+begin_src emacs-lisp
 (global-auto-revert-mode 1)
 #+end_src
 
-Much more polite! Note that if the buffer is modified and its changes
-haven’t been saved, it will not automatically revert the buffer and
-your unsaved changes won’t be lost. Very polite!
-
+Much more polite! Note that if the buffer is modified and its changes haven’t been saved, it will not automatically revert the buffer and your unsaved changes won’t be lost. Very polite!
 *** Misc
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Misc9j5jel6184j0
-:END:
-Let’s raise Emacs undo memory to 10MB, and make Emacs auto-save our
-files by default.
+Let’s raise Emacs undo memory to 10MB, and make Emacs auto-save our files by default.
 #+begin_src emacs-lisp
 (setq undo-limit        100000000
       auto-save-default t)
@@ -235,13 +222,7 @@ files by default.
 #+end_src
 
 ** Personal Information
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Personal-Informationi59jel6184j0
-:END:
-Emacs needs to know its master! For various reasons by the way, some
-packages rely of these variables to know who it is talking to or
-dealing with, such as ~mu4e~ which will guess who you are if you haven’t
-set it up correctly.
+Emacs needs to know its master! For various reasons by the way, some packages rely of these variables to know who it is talking to or dealing with, such as ~mu4e~ which will guess who you are if you haven’t set it up correctly.
 #+begin_src emacs-lisp
 (setq user-full-name       "Dang Quang Vu"
       user-real-login-name "Dang Quang Vu"
@@ -250,13 +231,7 @@ set it up correctly.
 #+end_src
 
 ** Visual Configuration
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Visual-Configurationzvcjel6184j0
-:END:
-The first visual setting in this section will activate the visible
-bell. What it does is I get a visual feedback each time I do something
-Emacs doesn’t agree with, like tring to go up a line when I’m already
-at the top of the buffer.
+The first visual setting in this section will activate the visible bell. What it does is I get a visual feedback each time I do something Emacs doesn’t agree with, like tring to go up a line when I’m already at the top of the buffer.
 #+begin_src emacs-lisp
 (setq visible-bell t)
 #+end_src
@@ -266,36 +241,26 @@ It is nicer to see a cursor cover the actual space of a character.
 (setq x-stretch-cursor t)
 #+end_src
 
-When text is ellipsed, I want the ellipsis marker to be a single
-character of three dots. Let’s make it so:
+When text is ellipsed, I want the ellipsis marker to be a single character of three dots. Let’s make it so:
 #+begin_src emacs-lisp
 (with-eval-after-load 'mule-util
  (setq truncate-string-ellipsis "…"))
 #+end_src
 
-With Emacs 29.0.50 onwards, a new frame parameter exists:
-~alpha-background~. Unlike ~alpha~, this frame parameter only makes Emacs’
-background transparent, excluding images and text.
+With Emacs 29.0.50 onwards, a new frame parameter exists: ~alpha-background~. Unlike ~alpha~, this frame parameter only makes Emacs’ background transparent, excluding images and text.
 #+begin_src emacs-lisp
 (add-to-list 'default-frame-alist '(alpha-background . 0.9))
 #+end_src
 
 *** Modeline Modules
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Visual-Configuration-Modeline-Modules9kgjel6184j0
-:END:
-I sometimes use Emacs in fullscreen, meaning my usual taskbar will be
-hidden. This is why I want the current date and time to be displayed,
-in an ISO-8601 style, although not exactly ISO-8601 (this is the best
-time format, fight me).
+I sometimes use Emacs in fullscreen, meaning my usual taskbar will be hidden. This is why I want the current date and time to be displayed, in an ISO-8601 style, although not exactly ISO-8601 (this is the best time format, fight me).
 #+begin_src emacs-lisp
 (require 'time)
 (setq display-time-format "%Y-%m-%d %H:%M")
 (display-time-mode 1) ; display time in modeline
 #+end_src
 
-Something my taskbar doesn’t have is a battery indicator. However, I
-want it enabled only if I am on a laptop or if a battery is available.
+Something my taskbar doesn’t have is a battery indicator. However, I want it enabled only if I am on a laptop or if a battery is available.
 #+begin_src emacs-lisp
 (let ((battery-str (battery)))
   (unless (or (equal "Battery status not available" battery-str)
@@ -303,18 +268,12 @@ want it enabled only if I am on a laptop or if a battery is available.
     (display-battery-mode 1)))
 #+end_src
 
-This isn’t a modeline module per se, but we have an indicator of the
-current line in Emacs. And although it is useful, I also often wish to
-know which column I’m on. This can be activated like so:
+This isn’t a modeline module per se, but we have an indicator of the current line in Emacs. And although it is useful, I also often wish to know which column I’m on. This can be activated like so:
 #+begin_src emacs-lisp
 (column-number-mode)
 #+end_src
 
-The following code is, as will several chunks of code in this config,
-borrowed from [[https://tecosaur.github.io/emacs-config/#theme-modeline][TEC’s configuration]]. It hides the encoding information
-of the file if the file itself is a regular UTF-8 file with ~\n~ line
-ending. Be aware the ~doom-modeline-buffer-encoding~ variable is usabel
-here only because I use the Doom modeline as seen below.
+The following code is, as will several chunks of code in this config, borrowed from [[https://tecosaur.github.io/emacs-config/#theme-modeline][TEC’s configuration]]. It hides the encoding information of the file if the file itself is a regular UTF-8 file with ~\n~ line ending. Be aware the ~doom-modeline-buffer-encoding~ variable is usabel here only because I use the Doom modeline as seen below.
 #+begin_src emacs-lisp
 (defun modeline-contitional-buffer-encoding ()
   "Hide \"LF UTF-8\" in modeline.
@@ -329,18 +288,13 @@ the user."
                 t)))
 #+end_src
 
-Now, let’s automate the call to this function in order to apply the
-modifications to the modeline each time we open a new file.
+Now, let’s automate the call to this function in order to apply the modifications to the modeline each time we open a new file.
 #+begin_src emacs-lisp
 (add-hook 'after-change-major-mode-hook #'modeline-contitional-buffer-encoding)
 #+end_src
 
 *** Fonts
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Visual-Configuration-Fontsxfkjel6184j0
-:END:
-I don’t like the default font I usually have on my machines, I really
-don’t. I prefer [[https://github.com/microsoft/cascadia-code][Cascadia Code]], as it also somewhat supports the [[https://www.internationalphoneticassociation.org/][IPA]].
+I don’t like the default font I usually have on my machines, I really don’t. I prefer [[https://github.com/microsoft/cascadia-code][Cascadia Code]], as it also somewhat supports the [[https://www.internationalphoneticassociation.org/][IPA]].
 #+begin_src emacs-lisp
 (defvar dqv/default-font-size 170
   "Default font size.")
@@ -359,11 +313,7 @@ don’t. I prefer [[https://github.com/microsoft/cascadia-code][Cascadia Code]],
 #+end_src
 
 *** Frame Title
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Visual-Configuration-Frame-Titlej7ojel6184j0
-:END:
-This is straight-up copied from [[https://tecosaur.github.io/emacs-config/config.html#window-title][TEC]]’s configuration. See their comment
-on the matter.
+This is straight-up copied from [[https://tecosaur.github.io/emacs-config/config.html#window-title][TEC]]’s configuration. See their comment on the matter.
 #+begin_src emacs-lisp
 (setq frame-title-format
       '(""
@@ -375,17 +325,7 @@ on the matter.
 #+end_src
 
 ** A better custom variable setter
-:PROPERTIES:
-:CUSTOM_ID: Basic-Configuration-A-better-custom-variable-setter-56z4ni61lhj0
-:END:
-Something people often forget about custom variables in Elisp is they
-can have a custom setter that will run some code if we set the
-variable properly with ~customize-set-variable~, so ~setq~ shouldn’t be
-the user’s choice by default. But repeatedly writing
-~customize-set-variable~ can get tiring and boring. So why not take the
-best of both world and create ~csetq~, a ~setq~ that uses
-~customize-set-variable~ under the hood while it keeps a syntax similar
-to the one ~setq~ uses?
+Something people often forget about custom variables in Elisp is they can have a custom setter that will run some code if we set the variable properly with ~customize-set-variable~, so ~setq~ shouldn’t be the user’s choice by default. But repeatedly writing ~customize-set-variable~ can get tiring and boring. So why not take the best of both world and create ~csetq~, a ~setq~ that uses ~customize-set-variable~ under the hood while it keeps a syntax similar to the one ~setq~ uses?
 #+begin_src emacs-lisp
 (defmacro csetq (&rest forms)
   "Bind each custom variable FORM to the value of its VAL.
@@ -415,12 +355,6 @@ The return value of `csetq' is the value of the last VAL.
     `(progn ,@(nreverse sexps))))
 #+end_src
 
-I first got inspired by [[https://oremacs.com/2015/01/17/setting-up-ediff/][this blog article]] (archived article, just in
-case) but it seems the code snippet no longer works properly, so not
-only did I have to modify it to make it work with an arbitrary amount
-of arguments (as long as it’s pairs of variables and their value), but
-I also had to make the code simply work.
-
 * Custom Elisp
 ** Load-paths
 #+begin_src emacs-lisp
@@ -431,11 +365,7 @@ I also had to make the code simply work.
 
 ** Dired functions
 *** ~dqv/open-marked-files~
-:PROPERTIES:
-:CUSTOM_ID: Custom-Elisp-Dired-functions-dqv-open-marked-filesdw2kel6184j0
-:END:
-This function allows the user to open all marked files from a dired
-buffer as new Emacs buffers.
+This function allows the user to open all marked files from a dired buffer as new Emacs buffers.
 #+begin_src emacs-lisp
 (defun dqv/open-marked-files (&optional files)
   "Open all marked FILES in Dired buffer as new Emacs buffers."
@@ -451,12 +381,7 @@ buffer as new Emacs buffers.
 #+end_src
 
 ** Switch between buffers
-:PROPERTIES:
-:CUSTOM_ID: Custom-Elisp-Switch-between-buffersp4ekel6184j0
-:END:
-Two default shortcuts I really like from Spacemacs are ~SPC b m~ and ~SPC
-b s~, which bring the user directly to the ~*Messages*~ buffer and the
-~*scratch*~ buffer respectively. These functions do exactly this.
+Two default shortcuts I really like from Spacemacs are ~SPC b m~ and ~SPC b s~, which bring the user directly to the ~*Messages*~ buffer and the ~*scratch*~ buffer respectively. These functions do exactly this.
 #+begin_src emacs-lisp
 (defun switch-to-messages-buffer ()
   "Switch to Messages buffer."
@@ -470,20 +395,10 @@ b s~, which bring the user directly to the ~*Messages*~ buffer and the
 #+end_src
 
 ** Screenshots
-:PROPERTIES:
-:CUSTOM_ID: Custom-Elisp-Screenshots-l9bkib013aj0
-:END:
-Since Emacs27, it is possible for Emacs to take screenshots of itself
-in various formats. I’m mainly interested by the SVG and PNG format,
-so I’ll only write functions for these. It isn’t really redundant with
-the ~screenshot.el~ package used [[#Packages-Configuration-Applications-Screenshot96d1fl6184j0][here]] since these functions take a
-screenshot of Emacs as a whole rather than of a code snippet.
+Since Emacs27, it is possible for Emacs to take screenshots of itself in various formats. I’m mainly interested by the SVG and PNG format, so I’ll only write functions for these. It isn’t really redundant with the ~screenshot.el~ package used [[#Packages-Configuration-Applications-Screenshot96d1fl6184j0][here]] since these functions take a screenshot of Emacs as a whole rather than of a code snippet.
 
-First, we have a general function which is a slight modification of
-the function shared by Alphapapa in [[https://www.reddit.com/r/emacs/comments/idz35e/emacs_27_can_take_svg_screenshots_of_itself/g2c2c6y/][this Reddit comment]]. It has been
-modified so it is possible to pass the function an argument for the
-format the screenshot will be taken as, and if ~type~ is ~nil~ the user
-can still chose it.
+First, we have a general function which is a slight modification of the function shared by Alphapapa in [[https://www.reddit.com/r/emacs/comments/idz35e/emacs_27_can_take_svg_screenshots_of_itself/g2c2c6y/][this Reddit comment]]. It has been modified so it is possible to pass the function an argument for the format the screenshot will be taken as, and if ~type~ is ~nil~ the user can still chose it.
+
 #+begin_src emacs-lisp
 (defun self-screenshot (&optional type)
   "Save a screenshot of type TYPE of the current Emacs frame.
@@ -510,13 +425,9 @@ and ending with the extension of the requested TYPE."
     (message filename)))
 #+end_src
 
-I used this function to take the screenshots you can see in this
-document.
+I used this function to take the screenshots you can see in this document.
 
 ** Handle new windows
-:PROPERTIES:
-:CUSTOM_ID: Custom-Elisp-Handle-new-windows-f1za1rl02ej0
-:END:
 The two functions below allow the user to not only create a new window
 to the right or below the current window (respectively), but also to
 focus the new window immediately.
@@ -991,6 +902,16 @@ transparency.
   ("k" my/increase-frame-alpha-background))
 #+end_src
 
+* Function Decleration
+** Kill Other Buffer
+#+begin_src emacs-lisp
+(defun dqv/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer
+        (delq (current-buffer)
+              (remove-if-not 'buffer-file-name (buffer-list)))))
+#+end_src
 * Org-mode
 *** Citeproc
 Since recently, in order to make ~org-cite~ compile properly, we need
@@ -1520,12 +1441,12 @@ selected text is quite easy.
 You can find the keybinds for these functions in the chapter
 §[[#Packages-Configuration-Org-mode-Keybindingsv0e5fl6184j0]].
 
-**** ~phundrak/toggle-org-src-window-split~
+**** ~dqv/toggle-org-src-window-split~
 :PROPERTIES:
 :CUSTOM_ID: Custom-Elisp-Org-Functions-phundrak-toggle-org-src-window-splito2tkel6184j0
 :END:
 #+begin_src emacs-lisp
-(defun phundrak/toggle-org-src-window-split ()
+(defun dqv/toggle-org-src-window-split ()
   "This function allows the user to toggle the behavior of
 `org-edit-src-code'. If the variable `org-src-window-setup' has
 the value `split-window-right', then it will be changed to
@@ -1880,16 +1801,16 @@ Tables get a bit more love:
 
 Finally, let’s make enabling and disabling stuff accessible:
 #+name: org-keybinds-toggles
-| Key chord | Function                             | Description |
-|-----------+--------------------------------------+-------------|
-| T         | nil                                  | toggle      |
-| Tc        | org-toggle-checkbox                  |             |
-| Ti        | org-toggle-inline-images             |             |
-| Tl        | org-latex-preview                    |             |
-| Tn        | org-num-mode                         |             |
-| Ts        | phundrak/toggle-org-src-window-split |             |
-| Tt        | org-show-todo-tree                   |             |
-| TT        | org-todo                             |             |
+| Key chord | Function                        | Description |
+|-----------+---------------------------------+-------------|
+| T         | nil                             | toggle      |
+| Tc        | org-toggle-checkbox             |             |
+| Ti        | org-toggle-inline-images        |             |
+| Tl        | org-latex-preview               |             |
+| Tn        | org-num-mode                    |             |
+| Ts        | dqv/toggle-org-src-window-split |             |
+| Tt        | org-show-todo-tree              |             |
+| TT        | org-todo                        |             |
 
 *** LaTeX formats
 :PROPERTIES:
@@ -6991,9 +6912,9 @@ much to say. The prefix here is ~w~.
 | s   | evil-window-up                |             |
 | r   | evil-window-right             |             |
 | .   | windows-adjust-size/body      |             |
-| -   | split-window-below-and-focus  |             |
-| /   | split-window-right-and-focus  |             |
-| $   | winum-select-window-by-number |             |
+| s   | split-window-below-and-focus  |             |
+| v   | split-window-right-and-focus  |             |
+| i   | winum-select-window-by-number |             |
 | 0   | winum-select-window-0-or-10   | none        |
 | 1   | winum-select-window-1         | none        |
 | 2   | winum-select-window-2         | none        |
@@ -7006,16 +6927,13 @@ much to say. The prefix here is ~w~.
 | 9   | winum-select-window-9         | none        |
 | b   | kill-buffer-and-delete-window |             |
 | d   | delete-window                 |             |
-| o   | other-window                  |             |
-| D   | delete-other-windows          |             |
+| O   | dqv/kill-other-buffers        |             |
+| o   | delete-other-windows          |             |
 | w   |                               | writeroom   |
 | w.  | writeroom-buffer-width/body   |             |
 | ww  | writeroom-mode                |             |
 
 ** Quit
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Quit-bs8kh6s0baj0
-:END:
 Why would I ever use any of these keybinds? They are prefixed with ~q~.
 #+name: keybinds-quit
 | Key | Function                   | Description |
