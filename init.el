@@ -17,6 +17,12 @@
 (dolist (mode '(prog-mode-hook latex-mode-hook))
   (add-hook mode #'hs-minor-mode))
 
+;; Silence compiler warnings as they can be pretty disruptive
+(setq native-comp-async-report-warnings-errors nil)
+
+;; Set the right directory to store the native comp cache
+(add-to-list 'native-comp-eln-load-path (expand-file-name "eln-cache/" user-emacs-directory))
+
 (setq backup-directory-alist `(("." . ,(expand-file-name ".tmp/backups/"
                                                          user-emacs-directory))))
 
@@ -125,6 +131,10 @@ The return value of `csetq' is the value of the last VAL.
         (push `(customize-set-variable ',form ,value)
               sexps)))
     `(progn ,@(nreverse sexps))))
+
+;; Add my library path to load-path
+(add-to-list 'load-path "~/.emacs.d/lisp/")
+(add-to-list 'load-path "~/.emacs.d/lisp/maple-iedit")
 
 (defun dqv/open-marked-files (&optional files)
   "Open all marked FILES in Dired buffer as new Emacs buffers."
@@ -273,6 +283,7 @@ APPEND and COMPARE-FN, see `add-to-list'."
   :config
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+  (evil-global-set-key 'motion "w" 'evil-avy-goto-word-1)
   
   (general-define-key
    :keymaps 'evil-motion-state-map
@@ -436,6 +447,829 @@ APPEND and COMPARE-FN, see `add-to-list'."
   ("j" my/decrease-frame-alpha-background)
   ("k" my/increase-frame-alpha-background))
 
+(use-package citeproc
+  :after (org)
+  :defer t
+  :straight (:build t))
+
+  (use-package org
+    :straight t
+    :defer t
+    :commands (orgtbl-mode)
+    :hook ((org-mode . visual-line-mode)
+           (org-mode . org-num-mode))
+    :custom-face
+    (org-macro ((t (:foreground "#b48ead"))))
+    :init
+    (auto-fill-mode -1)
+    :config
+    (defhydra org-babel-transient ()
+      "
+    ^Navigate^                    ^Interact
+    ^^^^^^^^^^^------------------------------------------
+    [_j_/_k_] navigate src blocs  [_x_] execute src block
+    [_g_]^^   goto named block    [_'_] edit src block
+    [_z_]^^   recenter screen     [_q_] quit
+    "
+      ("q" nil :exit t)
+      ("j" org-babel-next-src-block)
+      ("k" org-babel-previous-src-block)
+      ("g" org-babel-goto-named-src-block)
+      ("z" recenter-top-bottom)
+      ("x" org-babel-execute-maybe)
+      ("'" org-edit-special :exit t))
+    (require 'ox-beamer)
+    (require 'org-protocol)
+    (setq org-hide-leading-stars             nil
+          org-hide-macro-markers             t
+          org-ellipsis                       " ⤵"
+          org-image-actual-width             600
+          org-redisplay-inline-images        t
+          org-display-inline-images          t
+          org-startup-with-inline-images     "inlineimages"
+          org-pretty-entities                t
+          org-fontify-whole-heading-line     t
+          org-fontify-done-headline          t
+          org-fontify-quote-and-verse-blocks t
+          org-startup-indented               t
+          org-startup-align-all-tables       t
+          org-use-property-inheritance       t
+          org-list-allow-alphabetical        t
+          org-M-RET-may-split-line           nil
+          org-src-window-setup               'split-window-below
+          org-src-fontify-natively           t
+          org-src-tab-acts-natively          t
+          org-src-preserve-indentation       t
+          org-log-done                       'time
+          org-directory                      "~/org"
+          org-default-notes-file             (expand-file-name "notes.org" org-directory))
+    (with-eval-after-load 'oc
+     (setq org-cite-global-bibliography '("~/org/bibliography/references.bib")))
+    (setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/"))
+    (add-hook 'org-mode-hook (lambda ()
+                               (interactive)
+                               (electric-indent-local-mode -1)))
+    (defvar org-conlanging-file "~/Dropbox/Org/conlanging.org")
+    (defvar org-notes-file "~/Dropbox/Org/notes.org")
+    (defvar org-journal-file "~/Dropbox/Org/journal.org")
+    (defvar org-linguistics-file "~/Dropbox/Org/linguistics.org")
+    (defvar org-novel-file "~/Dropbox/Org/novel.org")
+    (defvar org-agenda-file "~/Dropbox/Org/agenda/private.org")
+    (defvar org-school-file "~/Dropbox/Org/agenda/school.org")
+    (defvar org-worldbuilding-file "~/Dropbox/Org/worldbuilding.org")
+    (setq org-capture-templates
+          '(
+            ("e" "Email")
+            ("ew" "Write Email" entry
+              (file+headline org-default-notes-file "Emails")
+              (file "~/.emacs.d/capture/email.orgcaptmpl"))
+            ("j" "Journal" entry
+              (file+datetree org-journal-file ##)
+              (file "~/.emacs.d/capture/journal.orgcaptmpl"))
+            ("l" "Link")
+            ("ll" "General" entry
+              (file+headline org-default-notes-file "General")
+              (file "~/.emacs.d/capture/link.orgcaptmpl"))
+            ("ly" "YouTube" entry
+              (file+headline org-default-notes-file "YouTube")
+              (file "~/.emacs.d/capture/youtube.orgcaptmpl"))
+            ("L" "Protocol Link" entry
+              (file+headline org-default-notes-file "Link")
+              (file "~/.emacs.d/capture/protocol-link.orgcaptmpl"))
+            ("n" "Notes")
+            ("nc" "Conlanging" entry
+              (file+headline org-conlanging-file "Note")
+              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
+            ("nn" "General" entry
+              (file+headline org-default-notes-file "General")
+              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
+            ("nN" "Novel" entry
+              (file+headline org-novel-notes-file "Note")
+              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
+            ("nq" "Quote" entry
+              (file+headline org-default-notes-file "Quote")
+              (file "~/.emacs.d/capture/notes-quote.orgcaptmpl"))
+            ("nw" "Worldbuilding" entry
+              (file+headline org-wordbuilding-file "Note")
+              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
+            ("N" "Novel")
+            ("Ni" "Ideas" entry
+              (file+headline org-novel-notes-file "Ideas")
+              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
+            ("p" "Protocol" entry
+              (file+headline org-default-notes-file "Link")
+              (file "~/.emacs.d/capture/protocol.orgcaptmpl"))
+            ("r" "Resources")
+            ("rc" "Conlanging" entry
+              (file+headline org-conlanging-file "Resources")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("re" "Emacs" entry
+              (file+headline org-default-notes-file "Emacs")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("ri" "Informatique" entry
+              (file+headline org-default-notes-file "Informatique")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("rl" "Linguistics" entry
+              (file+headline org-default-notes-file "Linguistics")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("rL" "Linux" entry
+              (file+headline org-default-notes-file "Linux")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("rw" "Worldbuilding" entry
+              (file+headline org-wordbuilding-file "Resources")
+              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
+            ("t" "Tasks")
+            ("tb" "Birthday" entry
+              (file+headline org-private-agenda-file "Birthday")
+              (file "~/.emacs.d/capture/birthday.orgcaptmpl"))
+            ("te" "Event" entry
+              (file+headline org-private-agenda-file "Event")
+              (file "~/.emacs.d/capture/event.orgcaptmpl"))
+            ("th" "Health" entry
+              (file+headline org-private-agenda-file "Health")
+              (file "~/.emacs.d/capture/health.orgcaptmpl"))
+            ("ti" "Informatique" entry
+              (file+headline org-private-agenda-file "Informatique")
+              (file "~/.emacs.d/capture/informatique.orgcaptmpl"))))
+    (defun org-emphasize-bold ()
+      "Emphasize as bold the current region."
+      (interactive)
+      (org-emphasize 42))
+    (defun org-emphasize-italic ()
+      "Emphasize as italic the current region."
+      (interactive)
+      (org-emphasize 47))
+    (defun org-emphasize-underline ()
+      "Emphasize as underline the current region."
+      (interactive)
+      (org-emphasize 95))
+    (defun org-emphasize-verbatim ()
+      "Emphasize as verbatim the current region."
+      (interactive)
+      (org-emphasize 61))
+    (defun org-emphasize-code ()
+      "Emphasize as code the current region."
+      (interactive)
+      (org-emphasize 126))
+    (defun org-emphasize-strike-through ()
+      "Emphasize as strike-through the current region."
+      (interactive)
+      (org-emphasize 43))
+    
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((C . t)
+       (emacs-lisp . t)
+       (gnuplot . t)
+       (latex . t)
+       (makefile . t)
+       (plantuml . t)
+       (python . t)
+       (sass . t)
+       (shell . t)
+       (sql . t))
+     )
+    (setq org-use-sub-superscripts (quote {}))
+    (setq org-latex-compiler "xelatex")
+    (require 'engrave-faces)
+    (csetq org-latex-src-block-backend 'engraved)
+    (dolist (package '(("AUTO" "inputenc" t ("pdflatex"))
+                       ("T1"   "fontenc"  t ("pdflatex"))
+                       (""     "grffile"  t)))
+      (delete package org-latex-default-packages-alist))
+    
+    (dolist (package '(("capitalize" "cleveref")
+                       (""           "booktabs")
+                       (""           "tabularx")))
+      (add-to-list 'org-latex-default-packages-alist package t))
+    
+    (setq org-latex-reference-command "\\cref{%s}")
+    (setq org-export-latex-hyperref-format "\\ref{%s}")
+    (setq org-latex-pdf-process
+          '("tectonic -Z shell-escape --synctex --outdir=%o %f"))
+    (dolist (ext '("bbl" "lot"))
+      (add-to-list 'org-latex-logfiles-extensions ext t))
+    (use-package org-re-reveal
+      :defer t
+      :after org
+      :straight (:build t)
+      :init
+      (add-hook 'org-mode-hook (lambda () (require 'org-re-reveal)))
+      :config
+      (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js"
+            org-re-reveal-revealjs-version "4"))
+    (setq org-html-validation-link nil)
+    (eval-after-load "ox-latex"
+      '(progn
+         (add-to-list 'org-latex-classes
+                      '("conlang"
+                        "\\documentclass{book}"
+                        ("\\chapter{%s}" . "\\chapter*{%s}")
+                        ("\\section{%s}" . "\\section*{%s}")
+                        ("\\subsection{%s}" . "\\subsection*{%s}")
+                        ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+         (add-to-list 'org-latex-classes
+                      `("beamer"
+                        ,(concat "\\documentclass[presentation]{beamer}\n"
+                                 "[DEFAULT-PACKAGES]"
+                                 "[PACKAGES]"
+                                 "[EXTRA]\n")
+                        ("\\section{%s}" . "\\section*{%s}")
+                        ("\\subsection{%s}" . "\\subsection*{%s}")
+                        ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
+    (defvar phundrak//projects-config-target
+      "/ssh:Tilo:~/www/phundrak.com/config"
+      "Points to where exported files for config.phundrak.com should be put.")
+    (defvar phundrak//projects-config-source
+      "~/org/config/"
+      "Points to where the sources for config.phundrak.com are.")
+    (defvar phundrak//projects-config-language
+      "en"
+      "Language of the website config.phundrak.com.")
+    (defvar phundrak//projects-config-recursive
+      t
+      "Defines whether subdirectories should be parsed for config.phundrak.com.")
+    (defvar phundrak//projects-conlanging-target
+      "/rsync:Tilo:~/www/phundrak.com/conlang"
+      "Points to where exported files for langue.phundrak.com should be put.")
+    (defvar phundrak//projects-conlanging-source
+      "~/Documents/conlanging/content/"
+      "Points to where the sources for langue.phundrak.com are.")
+    (defvar phundrak//projects-conlanging-language
+      "en"
+      "Language of langue.phundrak.com.")
+    (defvar phundrak//projects-conlanging-recursive
+      t
+      "Defines whether subdirectories should be parsed for langue.phundrak.com.")
+    (setq org-publish-project-alist
+          `(
+            ("config-website-org"
+             :base-directory ,phundrak//projects-config-source
+             :base-extension "org"
+             :publishing-directory ,phundrak//projects-config-target
+             :recursive ,phundrak//projects-config-recursive
+             :language ,phundrak//projects-config-language
+             :publishing-function org-html-publish-to-html
+             :headline-levels 5
+             :auto-sitemap t
+             :auto-preamble t)
+            ("config-website-static"
+             :base-directory ,phundrak//projects-config-source
+             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub\\|md"
+             :publishing-directory ,phundrak//projects-config-target
+             :recursive ,phundrak//projects-config-recursive
+             :language ,phundrak//projects-config-language
+             :publishing-function org-publish-attachment)
+            ("config-website"
+             :components ("config-website-org"
+                          "config-website-static"))
+            ("conlang-phundrak-com-org"
+             :base-directory ,phundrak//projects-conlanging-source
+             :base-extension "org"
+             :exclude ,(rx (* print)
+                           (or "CONTRIB"
+                               "README"
+                               "header"
+                               "temp"
+                               "private"
+                               "svg-ink")
+                           (* print))
+             :publishing-directory ,phundrak//projects-conlanging-target
+             :recursive ,phundrak//projects-conlanging-recursive
+             :language ,phundrak//projects-conlanging-language
+             :publishing-function org-html-publish-to-html
+             :headline-levels 5
+             :auto-sitemap t
+             :auto-preamble t)
+            ("conlang-phundrak-com-pdf"
+             :base-directory ,phundrak//projects-conlanging-source
+             :base-extension "org"
+             :exclude ,(rx (* print)
+                           (or "CONTRIB"
+                               "README"
+                               "header"
+                               "temp"
+                               "index"
+                               "sitemap"
+                               "private"
+                               "svg-ink")
+                           (* print))
+             :publishing-directory ,phundrak//projects-conlanging-target
+             :recursive ,phundrak//projects-conlanging-recursive
+             :language ,phundrak//projects-conlanging-language
+             :publishing-function org-latex-publish-to-pdf
+             :headline-levels 5
+             :auto-preamble t)
+            ("conlang-phundrak-com-static"
+             :base-directory ,phundrak//projects-conlanging-source
+             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub"
+             :publishing-directory ,phundrak//projects-conlanging-target
+             :recursive ,phundrak//projects-conlanging-recursive
+             :language ,phundrak//projects-conlanging-language
+             :publishing-function org-publish-attachment)
+            ("conlang-phundrak-com"
+             :components ("conlang-phundrak-com-org"
+                          "conlang-phundrak-com-static"
+                          "conlang-phundrak-com-pdf"))))
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (dolist (pair '(("[ ]"         . ?☐)
+                                ("[X]"         . ?☑)
+                                ("[-]"         . ?❍)
+                                ("#+title:"    . ?📕)
+                                ("#+TITLE:"    . ?📕)
+                                ("#+author:"   . ?✎)
+                                ("#+AUTHOR:"   . ?✎)
+                                ("#+email:"    . ?📧)
+                                ("#+EMAIL:"    . ?📧)
+                                ("#+include"   . ?⭳)
+                                ("#+INCLUDE"   . ?⭳)
+                                ("#+begin_src" . ?λ)
+                                ("#+BEGIN_SRC" . ?λ)
+                                ("#+end_src"   . ?λ)
+                                ("#+END_SRC"   . ?λ)))
+                  (add-to-list 'prettify-symbols-alist pair))
+                (prettify-symbols-mode)))
+    :general
+    (dqv/evil
+      :keymaps 'org-mode-map
+      :packages 'org
+      "RET" 'org-open-at-point)
+    (dqv/major-leader-key
+      :keymaps 'org-mode-map
+      :packages 'org
+      "RET" #'org-ctrl-c-ret
+      "*" #'org-ctrl-c-star
+      "," #'org-ctrl-c-ctrl-c
+      "'" #'org-edit-special
+      "-" #'org-ctrl-c-minus
+      "a" #'org-agenda
+      "c" #'org-capture
+      "C" #'org-columns
+      "e" #'org-export-dispatch
+      "l" #'org-store-link
+      "p" #'org-priority
+      "r" #'org-reload
+      "b" '(:ignore t :wk "babel")
+      "b." #'org-babel-transient/body
+      "bb" #'org-babel-execute-buffer
+      "bc" #'org-babel-check-src-block
+      "bC" #'org-babel-tangle-clean
+      "be" #'org-babel-execute-maybe
+      "bf" #'org-babel-tangle-file
+      "bn" #'org-babel-next-src-block
+      "bo" #'org-babel-open-src-block-result
+      "bp" #'org-babel-previous-src-block
+      "br" #'org-babel-remove-result-one-or-many
+      "bR" #'org-babel-goto-named-result
+      "bt" #'org-babel-tangle
+      "bi" #'org-babel-view-src-block-info
+      "d" '(:ignore t :wk "dates")
+      "dd" #'org-deadline
+      "ds" #'org-schedule
+      "dt" #'org-time-stamp
+      "dT" #'org-time-stamp-inactive
+      "i" '(:ignore t :wk "insert")
+      "ib" #'org-insert-structure-template
+      "id" #'org-insert-drawer
+      "ie" '(:ignore t :wk "emphasis")
+      "ieb" #'org-emphasize-bold
+      "iec" #'org-emphasize-code
+      "iei" #'org-emphasize-italic
+      "ies" #'org-emphasize-strike-through
+      "ieu" #'org-emphasize-underline
+      "iev" #'org-emphasize-verbatim
+      "iE" #'org-set-effort
+      "if" #'org-footnote-new
+      "ih" #'org-insert-heading
+      "iH" #'counsel-org-link
+      "ii" #'org-insert-item
+      "il" #'org-insert-link
+      "in" #'org-add-note
+      "ip" #'org-set-property
+      "is" #'org-insert-subheading
+      "it" #'org-set-tags-command
+      "t" '(:ignore t :wk "tables")
+      "th" #'org-table-move-column-left
+      "tj" #'org-table-move-row-down
+      "tk" #'org-table-move-row-up
+      "tl" #'org-table-move-column-right
+      "ta" #'org-table-align
+      "te" #'org-table-eval-formula
+      "tf" #'org-table-field-info
+      "tF" #'org-table-edit-formulas
+      "th" #'org-table-convert
+      "tl" #'org-table-recalculate
+      "tp" #'org-plot/gnuplot
+      "tS" #'org-table-sort-lines
+      "tw" #'org-table-wrap-region
+      "tx" #'org-table-shrink
+      "tN" #'org-table-create-with-table.el
+      "td" '(:ignore t :wk "delete")
+      "tdc" #'org-table-delete-column
+      "tdr" #'org-table-kill-row
+      "ti" '(:ignore t :wk "insert")
+      "tic" #'org-table-insert-column
+      "tih" #'org-table-insert-hline
+      "tir" #'org-table-insert-row
+      "tiH" #'org-table-hline-and-move
+      "tt" '(:ignore t :wk "toggle")
+      "ttf" #'org-table-toggle-formula-debugger
+      "tto" #'org-table-toggle-coordinate-overlays
+      "T" '(:ignore t :wk "toggle")
+      "Tc" #'org-toggle-checkbox
+      "Ti" #'org-toggle-inline-images
+      "Tl" #'org-latex-preview
+      "Tn" #'org-num-mode
+      "Ts" #'phundrak/toggle-org-src-window-split
+      "Tt" #'org-show-todo-tree
+      "TT" #'org-todo)
+    (dqv/leader-key
+      :packages 'org
+      :infix "o"
+      ""  '(:ignore t :which-key "org")
+      "c" #'org-capture)
+    (dqv/major-leader-key
+      :packages 'org
+      :keymaps 'org-src-mode-map
+      "'" #'org-edit-src-exit
+      "k" #'org-edit-src-abort))
+
+  (use-package evil-org
+    :straight (:build t)
+    :after (org)
+    :hook (org-mode . evil-org-mode)
+    :config
+    (setq-default evil-org-movement-bindings
+                  '((up    . "k")
+                    (down  . "j")
+                    (left  . "h")
+                    (right . "l")))
+    (evil-org-set-key-theme '(textobjects navigation calendar additional shift operators))
+    (require 'evil-org-agenda)
+    (evil-org-agenda-set-keys))
+
+  (use-package conlanging
+    :straight (conlanging :build t
+                          :type git
+                          :repo "https://labs.phundrak.com/phundrak/conlanging.el")
+    :after org
+    :defer t)
+
+(use-package org-contrib
+  :after (org)
+  :defer t
+  :straight (:build t)
+  :init
+  (require 'ox-extra)
+  (ox-extras-activate '(latex-header-blocks ignore-headlines)))
+
+(use-package ob-async
+  :straight (:build t)
+  :defer t
+  :after (org ob))
+
+(use-package ob-latex-as-png
+  :after org
+  :straight (:build t))
+
+(use-package ob-restclient
+  :straight (:build t)
+  :defer t
+  :after (org ob)
+  :init
+  (add-to-list 'org-babel-load-languages '(restclient . t)))
+
+(use-package toc-org
+  :after (org markdown-mode)
+  :straight (:build t)
+  :init
+  (add-to-list 'org-tag-alist '("TOC" . ?T))
+  :hook (org-mode . toc-org-enable)
+  :hook (markdown-mode . toc-org-enable))
+
+(use-package org-unique-id
+  :straight (org-unique-id :build t
+                           :type git
+                           :host github
+                           :repo "Phundrak/org-unique-id")
+  :defer t
+  :after org
+  :init (add-hook 'before-save-hook #'org-unique-id-maybe))
+
+(defun phundrak/toggle-org-src-window-split ()
+  "This function allows the user to toggle the behavior of
+`org-edit-src-code'. If the variable `org-src-window-setup' has
+the value `split-window-right', then it will be changed to
+`split-window-below'. Otherwise, it will be set back to
+`split-window-right'"
+  (interactive)
+  (if (equal org-src-window-setup 'split-window-right)
+      (setq org-src-window-setup 'split-window-below)
+    (setq org-src-window-setup 'split-window-right))
+  (message "Org-src buffers will now split %s"
+           (if (equal org-src-window-setup 'split-window-right)
+               "vertically"
+             "horizontally")))
+
+(use-package org-conlang
+  :defer t
+  :after '(org ol ox)
+  :straight (org-conlang :type git
+                         :host nil
+                         :repo "https://labs.phundrak.com/phundrak/org-conlang"
+                         :build t))
+
+(use-package ox-epub
+  :after (org ox)
+  :straight (:build t))
+
+(use-package ox-gemini
+  :defer t
+  :straight (:build t)
+  :after (ox org))
+
+;; (use-package htmlize
+;;   :defer t
+;;   :straight (:build t))
+
+(use-package preview-org-html-mode
+  :defer t
+  :after (org)
+  :straight (preview-org-html-mode :build t
+                                   :type git
+                                   :host github
+                                   :repo "jakebox/preview-org-html-mode")
+  :general
+  (dqv/major-leader-key
+   :keymaps 'org-mode-map
+   :packages 'preview-org-html-mode
+   :infix "P"
+   ""  '(:ignore t :which-key "preview")
+   "h" #'preview-org-html-mode
+   "r" #'preview-org-html-refresh
+   "p" #'preview-org-html-pop-window-to-frame)
+  :config
+  (setq preview-org-html-refresh-configuration 'save))
+
+(use-package engrave-faces
+  :defer t
+  :straight (:build t)
+  :after org)
+
+(use-package org-re-reveal
+  :defer t
+  :after org
+  :straight (:build t)
+  :init
+  (add-hook 'org-mode-hook (lambda () (require 'org-re-reveal)))
+  :config
+  (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js"
+        org-re-reveal-revealjs-version "4"))
+
+(use-package ox-ssh
+  :after (ox org)
+  :straight (:build t))
+
+(use-package reftex
+  :commands turn-on-reftex
+  :init (setq reftex-default-bibliography "~/org/bibliography/references.bib"
+              reftex-plug-into-AUCTeX     t))
+
+(use-package org-ref
+  ;; :after (org ox-bibtex pdf-tools)
+  :after org
+  :defer t
+  :straight (:build t)
+  :custom-face
+  (org-ref-cite-face ((t (:weight bold))))
+  :init
+  (setq org-ref-completion-library    'org-ref-ivy-cite
+        org-latex-logfiles-extensions '("lof" "lot" "aux" "idx" "out" "log" "fbd_latexmk"
+                                        "toc" "nav" "snm" "vrb" "dvi" "blg" "brf" "bflsb"
+                                        "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle"))
+  (add-hook 'org-mode-hook (lambda () (require 'org-ref)))
+  :config
+  (setq bibtex-completion-pdf-field    "file"
+        bibtex-completion-notes-path   "~/org/bibliography/notes/"
+        bibtex-completion-bibliography "~/org/bibliography/references.bib"
+        bibtex-completion-library-path "~/org/bibliography/bibtex-pdfs/"
+        bibtex-completion-pdf-symbol   "⌘"
+        bibtex-completion-notes-symbol "✎")
+  :general
+  (dqv/evil
+   :keymaps 'bibtex-mode-map
+   :packages 'org-ref
+   "C-j" #'org-ref-bibtex-next-entry
+   "C-k" #'org-ref-bibtex-previous-entry
+   "gj"  #'org-ref-bibtex-next-entry
+   "gk"  #'org-ref-bibtex-previous-entry)
+  (dqv/major-leader-key
+   :keymaps '(bibtex-mode-map)
+   :packages 'org-ref
+   ;; Navigation
+   "j" #'org-ref-bibtex-next-entry
+   "k" #'org-ref-bibtex-previous-entry
+
+   ;; Open
+   "b" #'org-ref-open-in-browser
+   "n" #'org-ref-open-bibtex-notes
+   "p" #'org-ref-open-bibtex-pdf
+
+   ;; Misc
+   "h" #'org-ref-bibtex-hydra/body
+   "i" #'org-ref-bibtex-hydra/org-ref-bibtex-new-entry/body-and-exit
+   "s" #'org-ref-sort-bibtex-entry
+
+   "l" '(:ignore t :which-key "lookup")
+   "la" #'arxiv-add-bibtex-entry
+   "lA" #'arxiv-get-pdf-add-bibtex-entry
+   "ld" #'doi-utils-add-bibtex-entry-from-doi
+   "li" #'isbn-to-bibtex
+   "lp" #'pubmed-insert-bibtex-from-pmid)
+  (dqv/major-leader-key
+   :keymaps 'org-mode-map
+   :pakages 'org-ref
+   "ic" #'org-ref-insert-link))
+
+(use-package ivy-bibtex
+  :defer t
+  :straight (:build t)
+  :config
+  (setq bibtex-completion-pdf-open-function #'find-file)
+  :general
+  (dqv/leader-key
+    :keymaps '(bibtex-mode-map)
+    :packages 'ivy-bibtex
+    "m" #'ivy-bibtex))
+
+(defun my/org-present-prepare-slide ()
+  (org-overview)
+  (org-show-entry)
+  (org-show-children)
+  (org-present-hide-cursor))
+
+(defun my/org-present-init ()
+  (setq header-line-format " ")
+  (org-display-inline-images)
+  (my/org-present-prepare-slide))
+
+(defun my/org-present-quit ()
+  (setq header-line-format nil)
+  (org-present-small)
+  (org-present-show-cursor))
+
+(defun my/org-present-prev ()
+  (interactive)
+  (org-present-prev)
+  (my/org-present-prepare-slide))
+
+(defun my/org-present-next ()
+  (interactive)
+  (org-present-next)
+  (my/org-present-prepare-slide))
+
+(use-package org-present
+  :after org
+  :defer t
+  :straight (:build t)
+  :general
+  (dqv/major-leader-key
+    :packages 'org-present
+    :keymaps 'org-mode-map
+    "P" #'org-present)
+  (dqv/evil
+    :states 'normal
+    :packages 'org-present
+    :keymaps 'org-present-mode-keymap
+    "+" #'org-present-big
+    "-" #'org-present-small
+    "<" #'org-present-beginning
+    ">" #'org-present-end
+    "«" #'org-present-beginning
+    "»" #'org-present-end
+    "c" #'org-present-hide-cursor
+    "C" #'org-present-show-cursor
+    "n" #'org-present-next
+    "p" #'org-present-prev
+    "r" #'org-present-read-only
+    "w" #'org-present-read-write
+    "q" #'org-present-quit)
+  :hook ((org-present-mode      . my/org-present-init)
+         (org-present-mode-quit . my/org-present-quit)))
+
+(use-package mixed-pitch
+  :after org
+  :straight (:build t)
+  :hook
+  (org-mode           . mixed-pitch-mode)
+  (emms-browser-mode  . mixed-pitch-mode)
+  (emms-playlist-mode . mixed-pitch-mode)
+  :config
+  (add-hook 'org-agenda-mode-hook (lambda () (mixed-pitch-mode -1))))
+
+(use-package org-appear
+  :after org
+  :straight (:build t)
+  :hook (org-mode . org-appear-mode)
+  :config
+  (setq org-appear-autoemphasis   t
+        org-hide-emphasis-markers t
+        org-appear-autolinks      t
+        org-appear-autoentities   t
+        org-appear-autosubmarkers t)
+  (run-at-time nil nil #'org-appear--set-elements))
+
+(use-package org-fragtog
+  :defer t
+  :after org
+  :straight (:build t)
+  :hook (org-mode . org-fragtog-mode))
+
+(use-package org-modern
+  :straight (:build t)
+  :after org
+  :defer t
+  :hook (org-mode . org-modern-mode)
+  :hook (org-agenda-finalize . org-modern-agenda))
+
+(use-package org-fancy-priorities
+  :after (org all-the-icons)
+  :straight (:build t)
+  :hook (org-mode        . org-fancy-priorities-mode)
+  :hook (org-agenda-mode . org-fancy-priorities-mode)
+  :config
+  (setq org-fancy-priorities-list `(,(all-the-icons-faicon "flag"     :height 1.1 :v-adjust 0.0)
+                                    ,(all-the-icons-faicon "arrow-up" :height 1.1 :v-adjust 0.0)
+                                    ,(all-the-icons-faicon "square"   :height 1.1 :v-adjust 0.0))))
+
+(use-package org-ol-tree
+  :after (org avy)
+  :defer t
+  :straight (org-ol-tree :build t
+                         :host github
+                         :type git
+                         :repo "Townk/org-ol-tree")
+  :general
+  (dqv/major-leader-key
+    :packages 'org-ol-tree
+    :keymaps 'org-mode-map
+    "O" #'org-ol-tree))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (dolist (pair '(("[ ]"         . ?☐)
+                            ("[X]"         . ?☑)
+                            ("[-]"         . ?❍)
+                            ("#+title:"    . ?📕)
+                            ("#+TITLE:"    . ?📕)
+                            ("#+author:"   . ?✎)
+                            ("#+AUTHOR:"   . ?✎)
+                            ("#+email:"    . ?📧)
+                            ("#+EMAIL:"    . ?📧)
+                            ("#+include"   . ?⭳)
+                            ("#+INCLUDE"   . ?⭳)
+                            ("#+begin_src" . ?λ)
+                            ("#+BEGIN_SRC" . ?λ)
+                            ("#+end_src"   . ?λ)
+                            ("#+END_SRC"   . ?λ)))
+              (add-to-list 'prettify-symbols-alist pair))
+            (prettify-symbols-mode)))
+
+(defun dqv/org-mode-visual-fill ()
+  (setq visual-fill-column-width 160
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(use-package visual-fill-column
+  :hook (org-mode . dqv/org-mode-visual-fill))
+
+(use-package org-tree-slide
+  :defer t
+  :after org
+  :straight (:build t)
+  :config
+  (setq org-tree-slide-skip-done nil)
+  :general
+  (dqv/evil
+    :keymaps 'org-mode-map
+    :packages 'org-tree-slide
+    "<f8>" #'org-tree-slide-mode)
+  (dqv/major-leader-key
+    :keymaps 'org-tree-slide-mode-map
+    :packages 'org-tree-slide
+    "d" (lambda () (interactive (setq org-tree-slide-skip-done (not org-tree-slide-skip-done))))
+    "n" #'org-tree-slide-move-next-tree
+    "p" #'org-tree-slide-move-previous-tree
+    "j" #'org-tree-slide-move-next-tree
+    "k" #'org-tree-slide-move-previous-tree
+    "u" #'org-tree-slide-content))
+
+(use-package org-roll
+  :defer t
+  :after org
+  :straight (:build t :type git :host github :repo "zaeph/org-roll"))
+
 (use-package company
   :straight (:build t)
   :defer t
@@ -508,7 +1342,7 @@ APPEND and COMPARE-FN, see `add-to-list'."
             ))))
 
 (use-package ivy
-  :straight (:build t)
+  :straight t
   :defer t
   :diminish
   :bind (("C-s" . swiper)
@@ -1084,6 +1918,23 @@ deactivate `magit-todos-mode', otherwise enable it."
   (setq writeroom-mode-line         t
         writeroom-major-modes       '(text-mode org-mode markdown-mode nov-mode Info-mode)))
 
+(use-package maple-iedit
+  :ensure nil
+  :commands (maple-iedit-match-all maple-iedit-match-next maple-iedit-match-previous)
+  :config
+  (setq maple-iedit-ignore-case t)
+
+  (defhydra maple/iedit ()
+    ("n" maple-iedit-match-next "next")
+    ("t" maple-iedit-skip-and-match-next "skip and next")
+    ("T" maple-iedit-skip-and-match-previous "skip and previous")
+    ("p" maple-iedit-match-previous "prev"))
+  :bind (:map evil-visual-state-map
+              ("n" . maple/iedit/body)
+              ;; ("C-n" . maple-iedit-match-next)
+              ;; ("C-p" . maple-iedit-match-previous)
+              ("C-t" . maple-iedit-skip-and-match-next)))
+
 (use-package dirvish
   :straight (:build t)
   :defer t
@@ -1546,824 +2397,6 @@ deactivate `magit-todos-mode', otherwise enable it."
                 (append '((company-math-symbols-latex company-latex-commands))
                         company-backends)))
   (add-hook 'TeX-mode-hook #'my-latex-mode-setup))
-
-(use-package citeproc
-  :after (org)
-  :defer t
-  :straight (:build t))
-
-  (use-package org
-    :straight t
-    :defer t
-    :commands (orgtbl-mode)
-    :hook ((org-mode . visual-line-mode)
-           (org-mode . org-num-mode))
-    :custom-face
-    (org-macro ((t (:foreground "#b48ead"))))
-    :init
-    (auto-fill-mode -1)
-    :config
-    (defhydra org-babel-transient ()
-      "
-    ^Navigate^                    ^Interact
-    ^^^^^^^^^^^------------------------------------------
-    [_j_/_k_] navigate src blocs  [_x_] execute src block
-    [_g_]^^   goto named block    [_'_] edit src block
-    [_z_]^^   recenter screen     [_q_] quit
-    "
-      ("q" nil :exit t)
-      ("j" org-babel-next-src-block)
-      ("k" org-babel-previous-src-block)
-      ("g" org-babel-goto-named-src-block)
-      ("z" recenter-top-bottom)
-      ("x" org-babel-execute-maybe)
-      ("'" org-edit-special :exit t))
-    (require 'ox-beamer)
-    (require 'org-protocol)
-    (setq org-hide-leading-stars             nil
-          org-hide-macro-markers             t
-          org-ellipsis                       " ⤵"
-          org-image-actual-width             600
-          org-redisplay-inline-images        t
-          org-display-inline-images          t
-          org-startup-with-inline-images     "inlineimages"
-          org-pretty-entities                t
-          org-fontify-whole-heading-line     t
-          org-fontify-done-headline          t
-          org-fontify-quote-and-verse-blocks t
-          org-startup-indented               t
-          org-startup-align-all-tables       t
-          org-use-property-inheritance       t
-          org-list-allow-alphabetical        t
-          org-M-RET-may-split-line           nil
-          org-src-window-setup               'split-window-below
-          org-src-fontify-natively           t
-          org-src-tab-acts-natively          t
-          org-src-preserve-indentation       t
-          org-log-done                       'time
-          org-directory                      "~/org"
-          org-default-notes-file             (expand-file-name "notes.org" org-directory))
-    (with-eval-after-load 'oc
-     (setq org-cite-global-bibliography '("~/org/bibliography/references.bib")))
-    (setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/"))
-    (add-hook 'org-mode-hook (lambda ()
-                               (interactive)
-                               (electric-indent-local-mode -1)))
-    (defvar org-conlanging-file "~/Dropbox/Org/conlanging.org")
-    (defvar org-notes-file "~/Dropbox/Org/notes.org")
-    (defvar org-journal-file "~/Dropbox/Org/journal.org")
-    (defvar org-linguistics-file "~/Dropbox/Org/linguistics.org")
-    (defvar org-novel-file "~/Dropbox/Org/novel.org")
-    (defvar org-agenda-file "~/Dropbox/Org/agenda/private.org")
-    (defvar org-school-file "~/Dropbox/Org/agenda/school.org")
-    (defvar org-worldbuilding-file "~/Dropbox/Org/worldbuilding.org")
-    (setq org-capture-templates
-          '(
-            ("e" "Email")
-            ("ew" "Write Email" entry
-              (file+headline org-default-notes-file "Emails")
-              (file "~/.emacs.d/capture/email.orgcaptmpl"))
-            ("j" "Journal" entry
-              (file+datetree org-journal-file ##)
-              (file "~/.emacs.d/capture/journal.orgcaptmpl"))
-            ("l" "Link")
-            ("ll" "General" entry
-              (file+headline org-default-notes-file "General")
-              (file "~/.emacs.d/capture/link.orgcaptmpl"))
-            ("ly" "YouTube" entry
-              (file+headline org-default-notes-file "YouTube")
-              (file "~/.emacs.d/capture/youtube.orgcaptmpl"))
-            ("L" "Protocol Link" entry
-              (file+headline org-default-notes-file "Link")
-              (file "~/.emacs.d/capture/protocol-link.orgcaptmpl"))
-            ("n" "Notes")
-            ("nc" "Conlanging" entry
-              (file+headline org-conlanging-file "Note")
-              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
-            ("nn" "General" entry
-              (file+headline org-default-notes-file "General")
-              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
-            ("nN" "Novel" entry
-              (file+headline org-novel-notes-file "Note")
-              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
-            ("nq" "Quote" entry
-              (file+headline org-default-notes-file "Quote")
-              (file "~/.emacs.d/capture/notes-quote.orgcaptmpl"))
-            ("nw" "Worldbuilding" entry
-              (file+headline org-wordbuilding-file "Note")
-              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
-            ("N" "Novel")
-            ("Ni" "Ideas" entry
-              (file+headline org-novel-notes-file "Ideas")
-              (file "~/.emacs.d/capture/notes.orgcaptmpl"))
-            ("p" "Protocol" entry
-              (file+headline org-default-notes-file "Link")
-              (file "~/.emacs.d/capture/protocol.orgcaptmpl"))
-            ("r" "Resources")
-            ("rc" "Conlanging" entry
-              (file+headline org-conlanging-file "Resources")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("re" "Emacs" entry
-              (file+headline org-default-notes-file "Emacs")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("ri" "Informatique" entry
-              (file+headline org-default-notes-file "Informatique")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("rl" "Linguistics" entry
-              (file+headline org-default-notes-file "Linguistics")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("rL" "Linux" entry
-              (file+headline org-default-notes-file "Linux")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("rw" "Worldbuilding" entry
-              (file+headline org-wordbuilding-file "Resources")
-              (file "~/.emacs.d/capture/resource.orgcaptmpl"))
-            ("t" "Tasks")
-            ("tb" "Birthday" entry
-              (file+headline org-private-agenda-file "Birthday")
-              (file "~/.emacs.d/capture/birthday.orgcaptmpl"))
-            ("te" "Event" entry
-              (file+headline org-private-agenda-file "Event")
-              (file "~/.emacs.d/capture/event.orgcaptmpl"))
-            ("th" "Health" entry
-              (file+headline org-private-agenda-file "Health")
-              (file "~/.emacs.d/capture/health.orgcaptmpl"))
-            ("ti" "Informatique" entry
-              (file+headline org-private-agenda-file "Informatique")
-              (file "~/.emacs.d/capture/informatique.orgcaptmpl"))))
-    (defun org-emphasize-bold ()
-      "Emphasize as bold the current region."
-      (interactive)
-      (org-emphasize 42))
-    (defun org-emphasize-italic ()
-      "Emphasize as italic the current region."
-      (interactive)
-      (org-emphasize 47))
-    (defun org-emphasize-underline ()
-      "Emphasize as underline the current region."
-      (interactive)
-      (org-emphasize 95))
-    (defun org-emphasize-verbatim ()
-      "Emphasize as verbatim the current region."
-      (interactive)
-      (org-emphasize 61))
-    (defun org-emphasize-code ()
-      "Emphasize as code the current region."
-      (interactive)
-      (org-emphasize 126))
-    (defun org-emphasize-strike-through ()
-      "Emphasize as strike-through the current region."
-      (interactive)
-      (org-emphasize 43))
-    
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((C . t)
-       (emacs-lisp . t)
-       (gnuplot . t)
-       (latex . t)
-       (makefile . t)
-       (plantuml . t)
-       (python . t)
-       (sass . t)
-       (shell . t)
-       (sql . t))
-     )
-    (setq org-use-sub-superscripts (quote {}))
-    (setq org-latex-compiler "xelatex")
-    (require 'engrave-faces)
-    (csetq org-latex-src-block-backend 'engraved)
-    (dolist (package '(("AUTO" "inputenc" t ("pdflatex"))
-                       ("T1"   "fontenc"  t ("pdflatex"))
-                       (""     "grffile"  t)))
-      (delete package org-latex-default-packages-alist))
-    
-    (dolist (package '(("capitalize" "cleveref")
-                       (""           "booktabs")
-                       (""           "tabularx")))
-      (add-to-list 'org-latex-default-packages-alist package t))
-    
-    (setq org-latex-reference-command "\\cref{%s}")
-    (setq org-export-latex-hyperref-format "\\ref{%s}")
-    (setq org-latex-pdf-process
-          '("tectonic -Z shell-escape --synctex --outdir=%o %f"))
-    (dolist (ext '("bbl" "lot"))
-      (add-to-list 'org-latex-logfiles-extensions ext t))
-    (use-package org-re-reveal
-      :defer t
-      :after org
-      :straight (:build t)
-      :init
-      (add-hook 'org-mode-hook (lambda () (require 'org-re-reveal)))
-      :config
-      (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js"
-            org-re-reveal-revealjs-version "4"))
-    (setq org-html-validation-link nil)
-    (eval-after-load "ox-latex"
-      '(progn
-         (add-to-list 'org-latex-classes
-                      '("conlang"
-                        "\\documentclass{book}"
-                        ("\\chapter{%s}" . "\\chapter*{%s}")
-                        ("\\section{%s}" . "\\section*{%s}")
-                        ("\\subsection{%s}" . "\\subsection*{%s}")
-                        ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
-         (add-to-list 'org-latex-classes
-                      `("beamer"
-                        ,(concat "\\documentclass[presentation]{beamer}\n"
-                                 "[DEFAULT-PACKAGES]"
-                                 "[PACKAGES]"
-                                 "[EXTRA]\n")
-                        ("\\section{%s}" . "\\section*{%s}")
-                        ("\\subsection{%s}" . "\\subsection*{%s}")
-                        ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
-    (defvar phundrak//projects-config-target
-      "/ssh:Tilo:~/www/phundrak.com/config"
-      "Points to where exported files for config.phundrak.com should be put.")
-    (defvar phundrak//projects-config-source
-      "~/org/config/"
-      "Points to where the sources for config.phundrak.com are.")
-    (defvar phundrak//projects-config-language
-      "en"
-      "Language of the website config.phundrak.com.")
-    (defvar phundrak//projects-config-recursive
-      t
-      "Defines whether subdirectories should be parsed for config.phundrak.com.")
-    (defvar phundrak//projects-conlanging-target
-      "/rsync:Tilo:~/www/phundrak.com/conlang"
-      "Points to where exported files for langue.phundrak.com should be put.")
-    (defvar phundrak//projects-conlanging-source
-      "~/Documents/conlanging/content/"
-      "Points to where the sources for langue.phundrak.com are.")
-    (defvar phundrak//projects-conlanging-language
-      "en"
-      "Language of langue.phundrak.com.")
-    (defvar phundrak//projects-conlanging-recursive
-      t
-      "Defines whether subdirectories should be parsed for langue.phundrak.com.")
-    (setq org-publish-project-alist
-          `(
-            ("config-website-org"
-             :base-directory ,phundrak//projects-config-source
-             :base-extension "org"
-             :publishing-directory ,phundrak//projects-config-target
-             :recursive ,phundrak//projects-config-recursive
-             :language ,phundrak//projects-config-language
-             :publishing-function org-html-publish-to-html
-             :headline-levels 5
-             :auto-sitemap t
-             :auto-preamble t)
-            ("config-website-static"
-             :base-directory ,phundrak//projects-config-source
-             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub\\|md"
-             :publishing-directory ,phundrak//projects-config-target
-             :recursive ,phundrak//projects-config-recursive
-             :language ,phundrak//projects-config-language
-             :publishing-function org-publish-attachment)
-            ("config-website"
-             :components ("config-website-org"
-                          "config-website-static"))
-            ("conlang-phundrak-com-org"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "org"
-             :exclude ,(rx (* print)
-                           (or "CONTRIB"
-                               "README"
-                               "header"
-                               "temp"
-                               "private"
-                               "svg-ink")
-                           (* print))
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-html-publish-to-html
-             :headline-levels 5
-             :auto-sitemap t
-             :auto-preamble t)
-            ("conlang-phundrak-com-pdf"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "org"
-             :exclude ,(rx (* print)
-                           (or "CONTRIB"
-                               "README"
-                               "header"
-                               "temp"
-                               "index"
-                               "sitemap"
-                               "private"
-                               "svg-ink")
-                           (* print))
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-latex-publish-to-pdf
-             :headline-levels 5
-             :auto-preamble t)
-            ("conlang-phundrak-com-static"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub"
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-publish-attachment)
-            ("conlang-phundrak-com"
-             :components ("conlang-phundrak-com-org"
-                          "conlang-phundrak-com-static"
-                          "conlang-phundrak-com-pdf"))))
-    (add-hook 'org-mode-hook
-              (lambda ()
-                (dolist (pair '(("[ ]"         . ?☐)
-                                ("[X]"         . ?☑)
-                                ("[-]"         . ?❍)
-                                ("#+title:"    . ?📕)
-                                ("#+TITLE:"    . ?📕)
-                                ("#+author:"   . ?✎)
-                                ("#+AUTHOR:"   . ?✎)
-                                ("#+email:"    . ?📧)
-                                ("#+EMAIL:"    . ?📧)
-                                ("#+include"   . ?⭳)
-                                ("#+INCLUDE"   . ?⭳)
-                                ("#+begin_src" . ?λ)
-                                ("#+BEGIN_SRC" . ?λ)
-                                ("#+end_src"   . ?λ)
-                                ("#+END_SRC"   . ?λ)))
-                  (add-to-list 'prettify-symbols-alist pair))
-                (prettify-symbols-mode)))
-    :general
-    (dqv/evil
-      :keymaps 'org-mode-map
-      :packages 'org
-      "RET" 'org-open-at-point)
-    (dqv/major-leader-key
-      :keymaps 'org-mode-map
-      :packages 'org
-      "RET" #'org-ctrl-c-ret
-      "*" #'org-ctrl-c-star
-      "," #'org-ctrl-c-ctrl-c
-      "'" #'org-edit-special
-      "-" #'org-ctrl-c-minus
-      "a" #'org-agenda
-      "c" #'org-capture
-      "C" #'org-columns
-      "e" #'org-export-dispatch
-      "l" #'org-store-link
-      "p" #'org-priority
-      "r" #'org-reload
-      "b" '(:ignore t :wk "babel")
-      "b." #'org-babel-transient/body
-      "bb" #'org-babel-execute-buffer
-      "bc" #'org-babel-check-src-block
-      "bC" #'org-babel-tangle-clean
-      "be" #'org-babel-execute-maybe
-      "bf" #'org-babel-tangle-file
-      "bn" #'org-babel-next-src-block
-      "bo" #'org-babel-open-src-block-result
-      "bp" #'org-babel-previous-src-block
-      "br" #'org-babel-remove-result-one-or-many
-      "bR" #'org-babel-goto-named-result
-      "bt" #'org-babel-tangle
-      "bi" #'org-babel-view-src-block-info
-      "d" '(:ignore t :wk "dates")
-      "dd" #'org-deadline
-      "ds" #'org-schedule
-      "dt" #'org-time-stamp
-      "dT" #'org-time-stamp-inactive
-      "i" '(:ignore t :wk "insert")
-      "ib" #'org-insert-structure-template
-      "id" #'org-insert-drawer
-      "ie" '(:ignore t :wk "emphasis")
-      "ieb" #'org-emphasize-bold
-      "iec" #'org-emphasize-code
-      "iei" #'org-emphasize-italic
-      "ies" #'org-emphasize-strike-through
-      "ieu" #'org-emphasize-underline
-      "iev" #'org-emphasize-verbatim
-      "iE" #'org-set-effort
-      "if" #'org-footnote-new
-      "ih" #'org-insert-heading
-      "iH" #'counsel-org-link
-      "ii" #'org-insert-item
-      "il" #'org-insert-link
-      "in" #'org-add-note
-      "ip" #'org-set-property
-      "is" #'org-insert-subheading
-      "it" #'org-set-tags-command
-      "j" '(:ignore t :wk "jump")
-      "ja" #'counsel-org-goto-all
-      "jh" #'counsel-org-goto
-      "t" '(:ignore t :wk "tables")
-      "th" #'org-table-move-column-left
-      "tj" #'org-table-move-row-down
-      "tk" #'org-table-move-row-up
-      "tl" #'org-table-move-column-right
-      "ta" #'org-table-align
-      "te" #'org-table-eval-formula
-      "tf" #'org-table-field-info
-      "tF" #'org-table-edit-formulas
-      "th" #'org-table-convert
-      "tl" #'org-table-recalculate
-      "tp" #'org-plot/gnuplot
-      "tS" #'org-table-sort-lines
-      "tw" #'org-table-wrap-region
-      "tx" #'org-table-shrink
-      "tN" #'org-table-create-with-table.el
-      "td" '(:ignore t :wk "delete")
-      "tdc" #'org-table-delete-column
-      "tdr" #'org-table-kill-row
-      "ti" '(:ignore t :wk "insert")
-      "tic" #'org-table-insert-column
-      "tih" #'org-table-insert-hline
-      "tir" #'org-table-insert-row
-      "tiH" #'org-table-hline-and-move
-      "tt" '(:ignore t :wk "toggle")
-      "ttf" #'org-table-toggle-formula-debugger
-      "tto" #'org-table-toggle-coordinate-overlays
-      "T" '(:ignore t :wk "toggle")
-      "Tc" #'org-toggle-checkbox
-      "Ti" #'org-toggle-inline-images
-      "Tl" #'org-latex-preview
-      "Tn" #'org-num-mode
-      "Ts" #'phundrak/toggle-org-src-window-split
-      "Tt" #'org-show-todo-tree
-      "TT" #'org-todo)
-    (dqv/leader-key
-      :packages 'org
-      :infix "o"
-      ""  '(:ignore t :which-key "org")
-      "c" #'org-capture)
-    (dqv/major-leader-key
-      :packages 'org
-      :keymaps 'org-src-mode-map
-      "'" #'org-edit-src-exit
-      "k" #'org-edit-src-abort))
-
-  (use-package evil-org
-    :straight (:build t)
-    :after (org)
-    :hook (org-mode . evil-org-mode)
-    :config
-    (setq-default evil-org-movement-bindings
-                  '((up    . "k")
-                    (down  . "j")
-                    (left  . "h")
-                    (right . "l")))
-    (evil-org-set-key-theme '(textobjects navigation calendar additional shift operators))
-    (require 'evil-org-agenda)
-    (evil-org-agenda-set-keys))
-
-  (use-package conlanging
-    :straight (conlanging :build t
-                          :type git
-                          :repo "https://labs.phundrak.com/phundrak/conlanging.el")
-    :after org
-    :defer t)
-
-(use-package org-contrib
-  :after (org)
-  :defer t
-  :straight (:build t)
-  :init
-  (require 'ox-extra)
-  (ox-extras-activate '(latex-header-blocks ignore-headlines)))
-
-(use-package ob-async
-  :straight (:build t)
-  :defer t
-  :after (org ob))
-
-(use-package ob-latex-as-png
-  :after org
-  :straight (:build t))
-
-(use-package ob-restclient
-  :straight (:build t)
-  :defer t
-  :after (org ob)
-  :init
-  (add-to-list 'org-babel-load-languages '(restclient . t)))
-
-(use-package toc-org
-  :after (org markdown-mode)
-  :straight (:build t)
-  :init
-  (add-to-list 'org-tag-alist '("TOC" . ?T))
-  :hook (org-mode . toc-org-enable)
-  :hook (markdown-mode . toc-org-enable))
-
-(use-package org-unique-id
-  :straight (org-unique-id :build t
-                           :type git
-                           :host github
-                           :repo "Phundrak/org-unique-id")
-  :defer t
-  :after org
-  :init (add-hook 'before-save-hook #'org-unique-id-maybe))
-
-(defun phundrak/toggle-org-src-window-split ()
-  "This function allows the user to toggle the behavior of
-`org-edit-src-code'. If the variable `org-src-window-setup' has
-the value `split-window-right', then it will be changed to
-`split-window-below'. Otherwise, it will be set back to
-`split-window-right'"
-  (interactive)
-  (if (equal org-src-window-setup 'split-window-right)
-      (setq org-src-window-setup 'split-window-below)
-    (setq org-src-window-setup 'split-window-right))
-  (message "Org-src buffers will now split %s"
-           (if (equal org-src-window-setup 'split-window-right)
-               "vertically"
-             "horizontally")))
-
-(use-package org-conlang
-  :defer t
-  :after '(org ol ox)
-  :straight (org-conlang :type git
-                         :host nil
-                         :repo "https://labs.phundrak.com/phundrak/org-conlang"
-                         :build t))
-
-(use-package ox-epub
-  :after (org ox)
-  :straight (:build t))
-
-(use-package ox-gemini
-  :defer t
-  :straight (:build t)
-  :after (ox org))
-
-;; (use-package htmlize
-;;   :defer t
-;;   :straight (:build t))
-
-(use-package preview-org-html-mode
-  :defer t
-  :after (org)
-  :straight (preview-org-html-mode :build t
-                                   :type git
-                                   :host github
-                                   :repo "jakebox/preview-org-html-mode")
-  :general
-  (dqv/major-leader-key
-   :keymaps 'org-mode-map
-   :packages 'preview-org-html-mode
-   :infix "P"
-   ""  '(:ignore t :which-key "preview")
-   "h" #'preview-org-html-mode
-   "r" #'preview-org-html-refresh
-   "p" #'preview-org-html-pop-window-to-frame)
-  :config
-  (setq preview-org-html-refresh-configuration 'save))
-
-(use-package engrave-faces
-  :defer t
-  :straight (:build t)
-  :after org)
-
-(use-package org-re-reveal
-  :defer t
-  :after org
-  :straight (:build t)
-  :init
-  (add-hook 'org-mode-hook (lambda () (require 'org-re-reveal)))
-  :config
-  (setq org-re-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js"
-        org-re-reveal-revealjs-version "4"))
-
-(use-package ox-ssh
-  :after (ox org)
-  :straight (:build t))
-
-(use-package reftex
-  :commands turn-on-reftex
-  :init (setq reftex-default-bibliography "~/org/bibliography/references.bib"
-              reftex-plug-into-AUCTeX     t))
-
-(use-package org-ref
-  ;; :after (org ox-bibtex pdf-tools)
-  :after org
-  :defer t
-  :straight (:build t)
-  :custom-face
-  (org-ref-cite-face ((t (:weight bold))))
-  :init
-  (setq org-ref-completion-library    'org-ref-ivy-cite
-        org-latex-logfiles-extensions '("lof" "lot" "aux" "idx" "out" "log" "fbd_latexmk"
-                                        "toc" "nav" "snm" "vrb" "dvi" "blg" "brf" "bflsb"
-                                        "entoc" "ps" "spl" "bbl" "pygtex" "pygstyle"))
-  (add-hook 'org-mode-hook (lambda () (require 'org-ref)))
-  :config
-  (setq bibtex-completion-pdf-field    "file"
-        bibtex-completion-notes-path   "~/org/bibliography/notes/"
-        bibtex-completion-bibliography "~/org/bibliography/references.bib"
-        bibtex-completion-library-path "~/org/bibliography/bibtex-pdfs/"
-        bibtex-completion-pdf-symbol   "⌘"
-        bibtex-completion-notes-symbol "✎")
-  :general
-  (dqv/evil
-   :keymaps 'bibtex-mode-map
-   :packages 'org-ref
-   "C-j" #'org-ref-bibtex-next-entry
-   "C-k" #'org-ref-bibtex-previous-entry
-   "gj"  #'org-ref-bibtex-next-entry
-   "gk"  #'org-ref-bibtex-previous-entry)
-  (dqv/major-leader-key
-   :keymaps '(bibtex-mode-map)
-   :packages 'org-ref
-   ;; Navigation
-   "j" #'org-ref-bibtex-next-entry
-   "k" #'org-ref-bibtex-previous-entry
-
-   ;; Open
-   "b" #'org-ref-open-in-browser
-   "n" #'org-ref-open-bibtex-notes
-   "p" #'org-ref-open-bibtex-pdf
-
-   ;; Misc
-   "h" #'org-ref-bibtex-hydra/body
-   "i" #'org-ref-bibtex-hydra/org-ref-bibtex-new-entry/body-and-exit
-   "s" #'org-ref-sort-bibtex-entry
-
-   "l" '(:ignore t :which-key "lookup")
-   "la" #'arxiv-add-bibtex-entry
-   "lA" #'arxiv-get-pdf-add-bibtex-entry
-   "ld" #'doi-utils-add-bibtex-entry-from-doi
-   "li" #'isbn-to-bibtex
-   "lp" #'pubmed-insert-bibtex-from-pmid)
-  (dqv/major-leader-key
-   :keymaps 'org-mode-map
-   :pakages 'org-ref
-   "ic" #'org-ref-insert-link))
-
-(use-package ivy-bibtex
-  :defer t
-  :straight (:build t)
-  :config
-  (setq bibtex-completion-pdf-open-function #'find-file)
-  :general
-  (dqv/leader-key
-    :keymaps '(bibtex-mode-map)
-    :packages 'ivy-bibtex
-    "m" #'ivy-bibtex))
-
-(defun my/org-present-prepare-slide ()
-  (org-overview)
-  (org-show-entry)
-  (org-show-children)
-  (org-present-hide-cursor))
-
-(defun my/org-present-init ()
-  (setq header-line-format " ")
-  (org-display-inline-images)
-  (my/org-present-prepare-slide))
-
-(defun my/org-present-quit ()
-  (setq header-line-format nil)
-  (org-present-small)
-  (org-present-show-cursor))
-
-(defun my/org-present-prev ()
-  (interactive)
-  (org-present-prev)
-  (my/org-present-prepare-slide))
-
-(defun my/org-present-next ()
-  (interactive)
-  (org-present-next)
-  (my/org-present-prepare-slide))
-
-(use-package org-present
-  :after org
-  :defer t
-  :straight (:build t)
-  :general
-  (dqv/major-leader-key
-    :packages 'org-present
-    :keymaps 'org-mode-map
-    "P" #'org-present)
-  (dqv/evil
-    :states 'normal
-    :packages 'org-present
-    :keymaps 'org-present-mode-keymap
-    "+" #'org-present-big
-    "-" #'org-present-small
-    "<" #'org-present-beginning
-    ">" #'org-present-end
-    "«" #'org-present-beginning
-    "»" #'org-present-end
-    "c" #'org-present-hide-cursor
-    "C" #'org-present-show-cursor
-    "n" #'org-present-next
-    "p" #'org-present-prev
-    "r" #'org-present-read-only
-    "w" #'org-present-read-write
-    "q" #'org-present-quit)
-  :hook ((org-present-mode      . my/org-present-init)
-         (org-present-mode-quit . my/org-present-quit)))
-
-(use-package mixed-pitch
-  :after org
-  :straight (:build t)
-  :hook
-  (org-mode           . mixed-pitch-mode)
-  (emms-browser-mode  . mixed-pitch-mode)
-  (emms-playlist-mode . mixed-pitch-mode)
-  :config
-  (add-hook 'org-agenda-mode-hook (lambda () (mixed-pitch-mode -1))))
-
-(use-package org-appear
-  :after org
-  :straight (:build t)
-  :hook (org-mode . org-appear-mode)
-  :config
-  (setq org-appear-autoemphasis   t
-        org-hide-emphasis-markers t
-        org-appear-autolinks      t
-        org-appear-autoentities   t
-        org-appear-autosubmarkers t)
-  (run-at-time nil nil #'org-appear--set-elements))
-
-(use-package org-fragtog
-  :defer t
-  :after org
-  :straight (:build t)
-  :hook (org-mode . org-fragtog-mode))
-
-(use-package org-modern
-  :straight (:build t)
-  :after org
-  :defer t
-  :hook (org-mode . org-modern-mode)
-  :hook (org-agenda-finalize . org-modern-agenda))
-
-(use-package org-fancy-priorities
-  :after (org all-the-icons)
-  :straight (:build t)
-  :hook (org-mode        . org-fancy-priorities-mode)
-  :hook (org-agenda-mode . org-fancy-priorities-mode)
-  :config
-  (setq org-fancy-priorities-list `(,(all-the-icons-faicon "flag"     :height 1.1 :v-adjust 0.0)
-                                    ,(all-the-icons-faicon "arrow-up" :height 1.1 :v-adjust 0.0)
-                                    ,(all-the-icons-faicon "square"   :height 1.1 :v-adjust 0.0))))
-
-(use-package org-ol-tree
-  :after (org avy)
-  :defer t
-  :straight (org-ol-tree :build t
-                         :host github
-                         :type git
-                         :repo "Townk/org-ol-tree")
-  :general
-  (dqv/major-leader-key
-    :packages 'org-ol-tree
-    :keymaps 'org-mode-map
-    "O" #'org-ol-tree))
-
-(add-hook 'org-mode-hook
-          (lambda ()
-            (dolist (pair '(("[ ]"         . ?☐)
-                            ("[X]"         . ?☑)
-                            ("[-]"         . ?❍)
-                            ("#+title:"    . ?📕)
-                            ("#+TITLE:"    . ?📕)
-                            ("#+author:"   . ?✎)
-                            ("#+AUTHOR:"   . ?✎)
-                            ("#+email:"    . ?📧)
-                            ("#+EMAIL:"    . ?📧)
-                            ("#+include"   . ?⭳)
-                            ("#+INCLUDE"   . ?⭳)
-                            ("#+begin_src" . ?λ)
-                            ("#+BEGIN_SRC" . ?λ)
-                            ("#+end_src"   . ?λ)
-                            ("#+END_SRC"   . ?λ)))
-              (add-to-list 'prettify-symbols-alist pair))
-            (prettify-symbols-mode)))
-
-(use-package org-tree-slide
-  :defer t
-  :after org
-  :straight (:build t)
-  :config
-  (setq org-tree-slide-skip-done nil)
-  :general
-  (dqv/evil
-    :keymaps 'org-mode-map
-    :packages 'org-tree-slide
-    "<f8>" #'org-tree-slide-mode)
-  (dqv/major-leader-key
-    :keymaps 'org-tree-slide-mode-map
-    :packages 'org-tree-slide
-    "d" (lambda () (interactive (setq org-tree-slide-skip-done (not org-tree-slide-skip-done))))
-    "n" #'org-tree-slide-move-next-tree
-    "p" #'org-tree-slide-move-previous-tree
-    "j" #'org-tree-slide-move-next-tree
-    "k" #'org-tree-slide-move-previous-tree
-    "u" #'org-tree-slide-content))
-
-(use-package org-roll
-  :defer t
-  :after org
-  :straight (:build t :type git :host github :repo "zaeph/org-roll"))
 
 (use-package tree-sitter
   :defer t
@@ -3888,7 +3921,10 @@ Spell Commands^^           Add To Dictionary^^              Other
 
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
+  "."  '(dired-jump :which-key "Dired Jump")
   "'"   #'shell-pop
+  ","   #'magit-status
+  "j" '(bufler-switch-buffer :which-key "Switch Buffer")
 
   "a" '(:ignore t :wk "apps")
   "ac" #'calc
@@ -4019,10 +4055,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   "i"   '(:ignore t :wk "insert")
   "iu"  #'counsel-unicode-char
 
-  "j" '(:ignore t :wk "jump")
-  "jf" #'counsel-file-jump
-  "jd" #'dirvish-dwim
-  "jD" #'dired-jump-other-window
 
   "t" '(:ignore t :wk "toggles")
   "tt" #'my/modify-frame-alpha-background/body

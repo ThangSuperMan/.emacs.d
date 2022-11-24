@@ -12,3 +12,9 @@
 /.DS_Store
 /.custom.el
 /recentf
+/persist/
+/org-roam.db
+/;
+/.org-generic-id-locations
+/.lsp-session-v1
+/early-init.el
