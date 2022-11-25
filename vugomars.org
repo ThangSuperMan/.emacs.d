@@ -60,6 +60,16 @@ We finally come to the ~use-package~ installation. This is done like so:
 (setq use-package-always-ensure t)
 #+end_src
 
+** Auth
++ This uses ~pass~ for all auth storage. if there are problems remember ~(setq auth-source-debug t)~
+#+begin_src emacs-lisp
+(auth-source-pass-enable)
+#+end_src
++ Let Emacs query the pass phrase instead of an external pinentry dialogue
+#+begin_src emacs-lisp
+(customize-set-variable 'epg-pinentry-mode 'loopback)
+#+end_src
+
 * Basic Configuration
 ** Early Init
 The early init file is the file loaded before anything else in Emacs. This is where I put some options in order to disable as quickly as possible some built-in features of Emacs before they can be even loaded, speeding Emacs up a bit.
@@ -112,7 +122,7 @@ The early init file is the file loaded before anything else in Emacs. This is wh
       whitespace-action '(cleanup auto-cleanup))
 
 (setq-default truncate-lines nil
-              fill-column 80
+              fill-column 140
               indent-tabs-mode nil
               display-line-numbers-width 3
               tab-width 2)
@@ -738,11 +748,8 @@ General is an awesome package for managing keybindings. Not only is it oriented 
 #+end_src
 
 ** Evil
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Eviljg30fl6184j0
-:END:
-Evil emulates most of vim’s keybinds, because let’s be honest here,
-they are much more comfortable than Emacs’.
+*** Evil
+Evil emulates most of vim’s keybinds, because let’s be honest here, they are much more comfortable than Emacs’.
 #+begin_src emacs-lisp
 (use-package evil
   :straight (:build t)
@@ -763,10 +770,8 @@ they are much more comfortable than Emacs’.
   (evil-set-initial-state 'dashboard-mode 'normal))
 #+end_src
 
-I want to undefine some of the default keybinds of Evil because it
-does not match my workflow. Namely, I use the space key and the comma
-as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~,
-~C-e~, and ~C-y~.
+*** Evil Define Keys
+I want to undefine some of the default keybinds of Evil because it does not match my workflow. Namely, I use the space key and the comma as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~, ~C-e~, and ~C-y~.
 #+name: evil-undefine-keys
 #+begin_src emacs-lisp :tangle no
 (evil-global-set-key 'motion "j" 'evil-next-visual-line)
@@ -788,9 +793,24 @@ as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~,
  "C-e" nil)
 #+end_src
 
-Something else that really bugs me is I use the bépo layout, which is
-not at all like the qwerty layout. For instance, ~hjkl~ becomes ~ctsr~.
-Thus, I need some bépo-specific changes.
+*** Surround
+#+begin_src emacs-lisp
+(use-package evil-surround
+  :straight (:build t)
+  :config
+  (global-evil-surround-mode t))
+
+(use-package evil-exchange
+  :straight (:build t)
+  :config (evil-exchange-install))
+
+(use-package evil-goggles
+  :straight (:build t)
+  :after evil
+  :config (evil-goggles-mode))
+#+end_src
+*** For Colemak-keyboard
++ Something else that really bugs me is I use the bépo layout, which is not at all like the qwerty layout. For instance, ~hjkl~ becomes ~ctsr~. Thus, I need some bépo-specific changes.
 #+name: evil-bepo
 #+begin_src emacs-lisp :tangle no
 ;; (dolist (key '("c" "C" "t" "T" "s" "S" "r" "R" "h" "H" "j" "J" "k" "K" "l" "L"))
@@ -888,9 +908,6 @@ insignificant and it’s still faster than loading a heavier file.
 #+end_src
 
 ** Hydra
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Hydra0970fl6184j0
-:END:
 [[https://github.com/abo-abo/hydra][Hydra]] is a simple menu creator for keybindings.
 #+begin_src emacs-lisp
 (use-package hydra

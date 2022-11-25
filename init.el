@@ -29,6 +29,10 @@
 (straight-use-package '(use-package :build t))
 (setq use-package-always-ensure t)
 
+(auth-source-pass-enable)
+
+(customize-set-variable 'epg-pinentry-mode 'loopback)
+
   ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
   (setq user-emacs-directory (expand-file-name "~/.emacs.d/")
         url-history-file (expand-file-name "url/history" user-emacs-directory))
@@ -398,6 +402,20 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (setq evil-want-fine-undo t) ; more granular undo with evil
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal))
+
+(use-package evil-surround
+  :straight (:build t)
+  :config
+  (global-evil-surround-mode t))
+
+(use-package evil-exchange
+  :straight (:build t)
+  :config (evil-exchange-install))
+
+(use-package evil-goggles
+  :straight (:build t)
+  :after evil
+  :config (evil-goggles-mode))
 
   (use-package evil-collection
     :after evil
