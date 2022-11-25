@@ -1,4 +1,7 @@
 #+title: Emacs Configuration
+#+AUTHOR: =Dang Quang Vu=
+#+EMAIL: vugomars@gmail.com
+#+SUBTITLE: Emacs configuration for work and life
 #+setupfile: headers
 #+html_head: <meta name="description" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:title" content="Vugomars' Emacs" />
@@ -6,6 +9,78 @@
 #+property: header-args:emacs-lisp  :mkdirp yes :lexical t :exports code
 #+property: header-args:emacs-lisp+ :tangle ./init.el
 #+property: header-args:emacs-lisp+ :mkdirp yes :noweb no-export
+#+options: title:t author:t email:t toc:t date:t tags:nil
+#+startup: fold noindent
+#+OPTIONS: toc:nil h:4
+#+STARTUP: showeverything
+#+latex_compiler: xelatex
+
+#+TOC: headlines 4
+
+* Table Of Content :TOC:
+- [[#introduction][Introduction]]
+- [[#package-management][Package Management]]
+  - [[#repositories][Repositories]]
+  - [[#straight][Straight]]
+  - [[#auth][Auth]]
+- [[#basic-configuration][Basic Configuration]]
+  - [[#early-init][Early Init]]
+  - [[#emacs-behavior][Emacs Behavior]]
+  - [[#personal-information][Personal Information]]
+  - [[#visual-configuration][Visual Configuration]]
+  - [[#a-better-custom-variable-setter][A better custom variable setter]]
+- [[#custom-elisp][Custom Elisp]]
+  - [[#load-paths][Load-paths]]
+  - [[#dired-functions][Dired functions]]
+  - [[#switch-between-buffers][Switch between buffers]]
+  - [[#screenshots][Screenshots]]
+  - [[#handle-new-windows][Handle new windows]]
+  - [[#extend-add-to-list][Extend ~add-to-list~]]
+  - [[#scroll-page][Scroll page]]
+  - [[#switch-to-previous-buffer][Switch to previous buffer]]
+  - [[#move-to-beginning-of-live][Move to beginning of live]]
+  - [[#go-to-match-paren][Go to match paren]]
+  - [[#delete-this-file][Delete This File]]
+  - [[#kill-all-the-buffer][Kill all the buffer]]
+- [[#keybinding-management][Keybinding Management]]
+  - [[#which-key][Which-key]]
+  - [[#general][General]]
+  - [[#evil][Evil]]
+  - [[#hydra][Hydra]]
+- [[#function-decleration][Function Decleration]]
+  - [[#kill-other-buffer][Kill Other Buffer]]
+- [[#org-mode][Org-mode]]
+- [[#packages-configuration][Packages Configuration]]
+  - [[#autocompletion][Autocompletion]]
+  - [[#applications][Applications]]
+  - [[#editing][Editing]]
+  - [[#emacs-built-ins][Emacs built-ins]]
+  - [[#making-my-life-easier][Making my life easier]]
+  - [[#latex][LaTeX]]
+  - [[#programming][Programming]]
+  - [[#visual-configuration-1][Visual Configuration]]
+  - [[#misc][Misc]]
+- [[#keybindings][Keybindings]]
+  - [[#apps][Apps]]
+  - [[#buffers][Buffers]]
+  - [[#errors][Errors]]
+  - [[#files][Files]]
+  - [[#help][Help]]
+  - [[#project][Project]]
+  - [[#text][Text]]
+  - [[#toggles][Toggles]]
+  - [[#windows][Windows]]
+  - [[#org-gcal][Org Gcal]]
+  - [[#org-roam][Org Roam]]
+  - [[#leetcode][Leetcode]]
+  - [[#quit][Quit]]
+
+* Introduction
+- After a couple year using =Doom Emacs=, i'm finally switching back to a vanilla configuration! Because i got tired some framework getting in my way when i wanted to do stuff. I'm sure this is more applicable to =Doom Emacs= since the letter has nice macros written so easily add new packages and configure them.
+
+#+begin_quote
+Emacs is everything i need for a Good =text editor=.
+#+end_quote
 
 * Package Management
 ** Repositories
@@ -197,7 +272,6 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 
 ;; Show line and column numbers (cursor position) in mode-line
 (line-number-mode 1)
-(column-number-mode 1)
 
 ;; Wrap long lines
 (global-visual-line-mode 1)
@@ -418,6 +492,16 @@ Something my taskbar doesn’t have is a battery indicator. However, I want it e
 This isn’t a modeline module per se, but we have an indicator of the current line in Emacs. And although it is useful, I also often wish to know which column I’m on. This can be activated like so:
 #+begin_src emacs-lisp
 (column-number-mode)
+
+;; Enable line numbers for some modes
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+;; Override some modes which derive from the above
+(dolist (mode '(org-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 #+end_src
 
 The following code is, as will several chunks of code in this config, borrowed from [[https://tecosaur.github.io/emacs-config/#theme-modeline][TEC’s configuration]]. It hides the encoding information of the file if the file itself is a regular UTF-8 file with ~\n~ line ending. Be aware the ~doom-modeline-buffer-encoding~ variable is usabel here only because I use the Doom modeline as seen below.
@@ -686,6 +770,98 @@ APPEND and COMPARE-FN, see `add-to-list'."
       (setq return (add-to-list list-var elt append compare-fn)))))
 #+end_src
 
+** Scroll page
+#+begin_src emacs-lisp
+(defun scroll-half-page-up ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-down ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+#+end_src
+
+** Switch to previous buffer
+#+begin_src emacs-lisp
+  (defun dqv/switch-to-previous-buffer ()
+    "Switch to previously open buffer.
+        Repeated invocations toggle between the two most recently open buffers."
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+#+end_src
+
+** Move to beginning of live
+#+begin_src emacs-lisp
+ (defun my-smarter-move-beginning-of-line (arg)
+   "Move point back to indentation of beginning of line.
+
+        Move point to the first non-whitespace character on this line.
+        If point is already there, move to the beginning of the line.
+        Effectively toggle between the first non-whitespace character and
+        the beginning of the line.
+
+        If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+        point reaches the beginning or end of the buffer, stop there."
+   (interactive "^p")
+   (setq arg (or arg 1))
+
+   ;; Move lines first
+   (when (/= arg 1)
+     (let ((line-move-visual nil))
+        (forward-line (1- arg))))
+
+   (let ((orig-point (point)))
+     (back-to-indentation)
+     (when (= orig-point (point))
+        (move-beginning-of-line 1))))
+
+ ;; remap C-a to `smarter-move-beginning-of-line'
+
+ (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
+#+end_src
+
+** Go to match paren
+#+begin_src emacs-lisp
+(defun dqv/goto-match-paren (arg)
+  "Go to the matching if on (){}[], similar to vi style of % ."
+  (interactive "p")
+  (cond ((looking-at "[\[\(\{]") (evil-jump-item))
+        ((looking-back "[\]\)\}]" 1) (evil-jump-item))
+        ((looking-at "[\]\)\}]") (forward-char) (evil-jump-item))
+        ((looking-back "[\[\(\{]" 1) (backward-char) (evil-jump-item))
+        (t nil)))
+  (global-set-key (kbd "s-;") #'dqv/goto-match-paren)
+#+end_src
+
+** Delete This File
+#+begin_src emacs-lisp
+(defun dqv/delete-this-file (&optional trash)
+  "Delete this file.
+
+When called interactively, TRASH is t if no prefix argument is given.
+With a prefix argument, TRASH is nil."
+  (interactive)
+  (when (and (called-interactively-p 'interactive)
+             (not current-prefix-arg))
+    (setq trash t))
+  (if-let ((file (buffer-file-name)))
+      (when (y-or-n-p "Delete this file? ")
+        (delete-file file trash)
+        (kill-buffer (current-buffer)))
+    (user-error "Current buffer is not visiting a file")))
+#+end_src
+
+** Kill all the buffer
+#+begin_src emacs-lisp
+    (defun dqv/kill-other-buffers ()
+      "Kill all other buffers."
+      (interactive)
+      (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+#+end_src
+
 * Keybinding Management
 ** Which-key
 Which key is, I think, one of my favorite quality of life package. When you begin a keybind, Emacs will show you all keybinds you can follow the first one with in order to form a full keychord. Very useful when you have a lot of keybinds and don’t remember exactly what is what.
@@ -940,25 +1116,8 @@ current buffer.
   ("q" nil "finished" :exit t))
 #+end_src
 
-Similarly, this one is also inspired from Spacemacs and allows the
-user to interact with the width of the buffer in ~writeroom~.
-#+begin_src emacs-lisp
-(defhydra writeroom-buffer-width ()
-  "
-^Width^        ^Other
-^^^^^^^^-----------------------
-[_j_] enlarge  [_r_/_0_] adjust
-[_k_] shrink   [_q_]^^   quit
-"
-  ("q" nil :exit t)
-  ("j" writeroom-increase-width "enlarge")
-  ("k" writeroom-decrease-width "shrink")
-  ("r" writeroom-adjust-width   "adjust")
-  ("0" writeroom-adjust-width   "adjust"))
-#+end_src
 
-Similarly still, this one allows me to manage the size my Emacs
-windows.
+Similarly still, this one allows me to manage the size my Emacs windows.
 #+begin_src emacs-lisp
 (defhydra windows-adjust-size ()
   "
@@ -2614,159 +2773,8 @@ docker-compose from Emacs.
   :straight (:build t))
 #+end_src
 
-*** Elfeed
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Elfeedoip0fl6184j0
-:END:
-Elfeed is a nice Atom and RSS reader for Emacs. The only thing I want
-to change for now is the default search filter: I want to see not only
-unread news but read news as well, a bit like my emails; and where the
-database is to be stored.
-#+begin_src emacs-lisp
-(use-package elfeed
-  :defer t
-  :straight (:build t)
-  :config
-  <<elfeed-open-youtube-with-mpv>>
-  :custom
-  ((elfeed-search-filter "@6-months-ago")
-   (elfeed-db-directory  (expand-file-name ".elfeed-db"
-                                           user-emacs-directory))))
-#+end_src
-
-I don’t want YouTube videos to be open with my web browser when I
-invoke ~elfeed-show-visit~, so I’ll advise this function so I can modify
-the behavior of said function. Oh, and I already made [[#Packages-Configuration-Misc-Ytplay-wxm9weq0r4j0][a neat package]]
-for playing YouTube videos and friends through [[https://ytdl-org.github.io/youtube-dl/][youtube-dl]] or its
-superior fork [[https://github.com/yt-dlp/yt-dlp][yt-dlp]] in mpv.
-#+name: elfeed-open-youtube-with-mpv
-#+begin_src emacs-lisp
-(defun my/elfeed-filter-youtube-videos (orig-fun &rest args)
-  "Open with mpv the video leading to PATH"
-  (let ((link (elfeed-entry-link elfeed-show-entry)))
-    (when link
-      (if (string-match-p ".*youtube\.com.*watch.*" link)
-          ;; This is a YouTube video, open it with mpv
-          (progn
-            (require 'ytplay)
-            (ytplay link))
-        (apply orig-fun args)))))
-
-(advice-add 'elfeed-show-visit :around #'my/elfeed-filter-youtube-videos)
-#+end_src
-
-A future improvement to be made is to let the user chose the
-resolution of the video before it is launched. I may not always have
-the best internet connection, and viewing 4K videos on a 1080p display
-is not something very useful.
-
-Elfeed-goodies is a package which enhances the Elfeed experience.
-Aside from running its setup command as soon as possible, I also set
-in this code block all my keybinds for Elfeed here.
-#+begin_src emacs-lisp
-(use-package elfeed-goodies
-  :defer t
-  :after elfeed
-  :commands elfeed-goodies/setup
-  :straight (:build t)
-  :init
-  (elfeed-goodies/setup)
-  :general
-  (dqv/underfine
-    :keymaps '(elfeed-show-mode-map elfeed-search-mode-map)
-    :packages 'elfeed
-    "DEL" nil
-    "s"   nil)
-  (dqv/evil
-    :keymaps 'elfeed-show-mode-map
-    :packages 'elfeed
-    <<general-keybindings-gen(table=elfeed-keybinds-show-mode)>>)
-  (dqv/evil
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    <<general-keybindings-gen(table=elfeed-keybinds-search-mode)>>)
-  (dqv/major-leader-key
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    <<general-keybindings-gen(table=elfeed-keybinds-search-mode-prefixed)>>))
-#+end_src
-
-Last but not least, my Elfeed configuration is stored in an org file
-thanks to ~elfeed-org~.
-#+begin_src emacs-lisp
-(use-package elfeed-org
-  :defer t
-  :after elfeed
-  :straight (:build t)
-  :init
-  (elfeed-org)
-  :config
-  (setq rmh-elfeed-org-files '("~/org/elfeed.org")))
-#+end_src
-
-**** Keybinds
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Elfeed-Keybinds-9oeijjs0baj0
-:END:
-First, here are the keybinds for Elfeed’s ~elfeed-show-mode~. They
-aren’t prefixed by ~SPC~ like most of my keybinds, a direct keypress
-will directly launch the function.
-#+name: elfeed-keybinds-show-mode
-| Key | Function                      | Comment |
-|-----+-------------------------------+---------|
-| +   | elfeed-show-tag               |         |
-| -   | elfeed-show-untag             |         |
-| «   | elfeed-show-prev              |         |
-| »   | elfeed-show-next              |         |
-| b   | elfeed-show-visit             |         |
-| C   | elfeed-kill-link-url-at-point |         |
-| d   | elfeed-show-save-enclosure    |         |
-| l   | elfeed-show-next-link         |         |
-| o   | elfeed-goodies/show-ace-link  |         |
-| q   | elfeed-kill-buffer            |         |
-| S   | elfeed-show-new-live-search   |         |
-| u   | elfeed-show-tag--unread       |         |
-| y   | elfeed-show-yank              |         |
-
-Same thing, different mode, here are my keybinds for
-~elfeed-search-mode~.
-#+name: elfeed-keybinds-search-mode
-| Key | Function                    | Comment |
-|-----+-----------------------------+---------|
-| «   | elfeed-search-first-entry   |         |
-| »   | elfeed-search-last-entry    |         |
-| b   | elfeed-search-browse-url    |         |
-| f   |                             | filter  |
-| fc  | elfeed-search-clear-filter  |         |
-| fl  | elfeed-search-live-filter   |         |
-| fs  | elfeed-search-set-filter    |         |
-| u   |                             | update  |
-| us  | elfeed-search-fetch         |         |
-| uS  | elfeed-search-update        |         |
-| uu  | elfeed-update               |         |
-| uU  | elfeed-search-update--force |         |
-| y   | elfeed-search-yank          |         |
-
-I have some additional keybinds for ~elfeed-search-mode~, but these one
-are prefixed with ~,~ (and ~M-m~).
-#+name: elfeed-keybinds-search-mode-prefixed
-| Key | Function                       | Comment |
-|-----+--------------------------------+---------|
-| c   | elfeed-db-compact              |         |
-| t   |                                | tag     |
-| tt  | elfeed-search-tag-all-unread   |         |
-| tu  | elfeed-search-untag-all-unread |         |
-| tT  | elfeed-search-tag-all          |         |
-| tU  | elfeed-search-untag-all        |         |
-
 *** Nov
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Nov0da1fl6184j0
-:END:
-Nov is a major-mode for reading EPUB files within Emacs. Since I have
-it, I don’t need any other Epub reader on my computer! Plus this one
-is customizable and programmable, why would I use any other EPUB
-reader?
+Nov is a major-mode for reading EPUB files within Emacs. Since I have it, I don’t need any other Epub reader on my computer! Plus this one is customizable and programmable, why would I use any other EPUB reader?
 #+begin_src emacs-lisp
 (use-package nov
   :straight (:build t)
@@ -2794,14 +2802,7 @@ reader?
 #+end_src
 
 *** PDF Tools
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-PDF-Toolsvqb1fl6184j0
-:END:
-~pdf-tools~ enables PDF support for Emacs, much better than its built-in
-support with DocView. Aside from the classical settings such as
-keybinds, I also enable the midnight colors by default; think of it as
-an equivalent of Zathura’s recolor feature which kind of enables a
-dark mode for PDFs.
+~pdf-tools~ enables PDF support for Emacs, much better than its built-in support with DocView. Aside from the classical settings such as keybinds, I also enable the midnight colors by default; think of it as an equivalent of Zathura’s recolor feature which kind of enables a dark mode for PDFs.
 #+begin_src emacs-lisp
 (use-package pdf-tools
   :defer t
@@ -3226,6 +3227,17 @@ in my Emacs build, and these keybinds *will not* be tangled.
  "C-u"       #'xwidget-webkit-scroll-down)
 #+end_src
 
+*** Leetcode
+#+begin_src emacs-lisp
+(use-package leetcode
+  :ensure t
+  :straight (:build t))
+(setq leetcode-prefer-language "rust"
+      leetcode-prefer-sql "mysql"
+      leetcode-save-solutions t
+      leetcode-directory "~/Development/leetcode-solution")
+#+end_src
+
 ** Editing
 *** Easily Inserting Pairs
 First, I’ll define some keybindings for easily inserting pairs when editing text.
@@ -3342,18 +3354,6 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
   :straight (:build t))
 #+end_src
 
-*** Writeroom
-On the other hand, ~writeroom~ allows the user to enter a distraction-free mode of Emacs, and I like that! But the default width is a bit too small for me, and I prefer not to go fullscren.
-#+begin_src emacs-lisp
-(use-package writeroom-mode
-  :defer t
-  :straight (:build t)
-  :init (global-writeroom-mode 1)
-  :config
-  (setq writeroom-mode-line         t
-        writeroom-major-modes       '(text-mode org-mode markdown-mode nov-mode Info-mode)))
-#+end_src
-
 *** Maple-iedit
 #+begin_src emacs-lisp
 (use-package maple-iedit
@@ -3372,6 +3372,145 @@ On the other hand, ~writeroom~ allows the user to enter a distraction-free mode 
               ;; ("C-n" . maple-iedit-match-next)
               ;; ("C-p" . maple-iedit-match-previous)
               ("C-t" . maple-iedit-skip-and-match-next)))
+#+end_src
+
+*** Engine
+#+begin_src emacs-lisp
+  (use-package engine-mode
+    :config
+    (engine/set-keymap-prefix (kbd "C-c s"))
+    (setq browse-url-browser-function 'browse-url-default-macosx-browser
+          engine/browser-function 'browse-url-default-macosx-browser
+          )
+
+    (defengine duckduckgo
+      "https://duckduckgo.com/?q=%s"
+      :keybinding "d")
+
+    (defengine github
+      "https://github.com/search?ref=simplesearch&q=%s"
+      :keybinding "1")
+
+    (defengine gitlab
+      "https://gitlab.com/search?search=%s&group_id=&project_id=&snippets=false&repository_ref=&nav_source=navbar"
+      :keybinding "2")
+
+    (defengine stack-overflow
+      "https://stackoverflow.com/search?q=%s"
+      :keybinding "s")
+
+    (defengine npm
+      "https://www.npmjs.com/search?q=%s"
+      :keybinding "n")
+
+    (defengine crates
+      "https://crates.io/search?q=%s"
+      :keybinding "c")
+
+    (defengine localhost
+      "http://localhost:%s"
+      :keybinding "l")
+
+    (defengine translate
+      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      :keybinding "t")
+
+    (defengine youtube
+      "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+      :keybinding "y")
+
+    (defengine google
+      "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+      :keybinding "g")
+
+    (engine-mode 1))
+#+end_src
+
+*** Bm
+#+begin_src emacs-lisp
+  (use-package bm
+    :demand t
+    :init
+    ;; restore on load (even before you require bm)
+    (setq bm-restore-repository-on-load t)
+
+    :config
+    ;; Allow cross-buffer 'next'
+    (setq bm-cycle-all-buffers t
+
+          ;; where to store persistant files
+          bm-repository-file "~/.emacs.d/bm-repository")
+
+    ;; save bookmarks
+    (setq-default bm-buffer-persistence t)
+
+    ;; Loading the repository from file when on start up.
+    (add-hook 'after-init-hook 'bm-repository-load)
+
+    ;; Saving bookmarks
+    (add-hook 'kill-buffer-hook #'bm-buffer-save)
+
+    ;; must save all bookmarks first.
+    (add-hook 'kill-emacs-hook #'(lambda nil
+                                   (bm-buffer-save-all)
+                                   (bm-repository-save)))
+
+    (add-hook 'after-save-hook #'bm-buffer-save)
+
+    ;; Restoring bookmarks
+    (add-hook 'find-file-hooks   #'bm-buffer-restore)
+    (add-hook 'after-revert-hook #'bm-buffer-restore)
+
+    (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+
+    ;; key binding
+    :bind (("C-M-s-l" . bm-toggle)
+           ("C-M-s-j" . bm-next)
+           ("C-M-s-k" . bm-previous)
+           ("C-M-s-o" . bm-show-all))
+    )
+#+end_src
+
+*** Hide-show
+#+begin_src emacs-lisp
+(use-package hideshow
+  :hook
+  (prog-mode . hs-minor-mode)
+  :bind
+  ("C-<tab>" . hs-cycle)
+  ("C-<iso-lefttab>" . hs-global-cycle)
+  ("C-S-<tab>" . hs-global-cycle))
+(defun hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children)))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))
 #+end_src
 
 ** Emacs built-ins
@@ -3859,7 +3998,6 @@ I’ll also create a fuction for connecting to this new Tramp protocol:
 + Bufler is an excellent package by alphapapa which enables you to automatically group all of your Emacs buffers into workspaces by defining a series of grouping rules. Once you have your groups defined (or use the default configuration which is quite good already), you can use the bufler-workspace-frame-set command to focus your current Emacs frame on a particular workspace so that bufler-switch-buffer will only show buffers from that workspace. In my case, this allows me to dedicate an EXWM workspace to a specific Bufler workspace so that only see the buffers I care about in that EXWM workspace.
 #+begin_src emacs-lisp
 (use-package bufler
-  :disabled
   :straight (:build t)
   :bind (("C-M-j" . bufler-switch-buffer)
          ("C-M-k" . bufler-workspace-frame-set))
@@ -5846,9 +5984,7 @@ Make sure to backup your old configuration!
                                 (straight-pull-all)
                                 (straight-rebuild-all)))))))
 
-  (setq dashboard-items '((recents  . 15)
-                          (agenda   . 10)
-                          (projects . 10)))
+  (setq dashboard-items '((agenda   . 15)))
   (dashboard-setup-startup-hook)
   :init
   (add-hook 'after-init-hook 'dashboard-refresh-buffer))
@@ -5921,7 +6057,7 @@ Finally, similar to how ~org-appear~ behaves, let’s show the real string of ou
 #+end_src
 
 *** Ligatures
-The font I’m using (see §[[#Basic-configuration-Visual-Configuration-Fontsxfkjel6184j0]]) supports ligatures, but Emacs in GUI mode does not. And of course, there’s a package for that.
+The font I’m using  supports ligatures, but Emacs in GUI mode does not. And of course, there’s a package for that.
 #+begin_src emacs-lisp
 (use-package ligature
   :straight (ligature :type git
@@ -6184,18 +6320,20 @@ Winum allows Emacs to associate windows with a specific number and navigate thro
 * Keybindings
 Undefining some stuff to make keybind prefixes work correctly.
 #+begin_src emacs-lisp
-(general-define-key
- :keymaps 'global-map
- "<mouse-2>" nil
- "<mouse-3>" nil)
+(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
+(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
+  (general-define-key
+   :keymaps 'global-map
+   "<mouse-2>" nil
+   "<mouse-3>" nil)
 
-(dqv/evil
-  :packages '(counsel)
-  "U"   #'evil-redo
-  "C-a" #'beginning-of-line
-  "C-e" #'end-of-line
-  "C-y" #'yank
-  "M-y" #'counsel-yank-pop)
+  (dqv/evil
+    :packages '(counsel)
+    "U"   #'evil-redo
+    "C-a" #'beginning-of-line
+    "C-e" #'end-of-line
+    "C-y" #'yank
+    "M-y" #'counsel-yank-pop)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -6205,6 +6343,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
+  "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
 
   <<general-keybindings-gen(table=keybinds-apps, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-apps-shell, prefix="as")>>
@@ -6235,6 +6374,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
   <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
+  <<general-keybindings-gen(table=keybinds-leetcode, prefix="a")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6321,6 +6461,7 @@ My keybinds for file manipulation are prefixed by ~f~.
 |-----+----------------------+-------------|
 |     |                      | files       |
 | f   | counsel-find-file    |             |
+| D   | dqv/delete-this-file |             |
 | F   | ivy-quick-find-files |             |
 | h   | hexl-find-file       |             |
 | r   | counsel-recentf      |             |
@@ -6436,13 +6577,10 @@ A couple of keybinds are hidden from which-key, otherwise there’s not much to 
 | 7   | winum-select-window-7         | none        |
 | 8   | winum-select-window-8         | none        |
 | 9   | winum-select-window-9         | none        |
-| b   | kill-buffer-and-delete-window |             |
+| c   | kill-buffer-and-delete-window |             |
 | d   | delete-window                 |             |
 | O   | dqv/kill-other-buffers        |             |
 | o   | delete-other-windows          |             |
-| w   |                               | writeroom   |
-| w.  | writeroom-buffer-width/body   |             |
-| ww  | writeroom-mode                |             |
 
 ** Org Gcal
 Why would I ever use any of these keybinds? They are prefixed with ~a~.
@@ -6460,7 +6598,7 @@ Why would I ever use any of these keybinds? They are prefixed with ~a~.
 | gt  | org-gcal-toggle-debug    |             |
 
 ** Org Roam
-They are prefixed with ~n~.
+A couple of keybinds are hidden from roam mode, They are prefixed with ~n~.
 #+name: keybinds-roam
 | Key | Function                          | Description |
 |-----+-----------------------------------+-------------|
@@ -6475,6 +6613,19 @@ They are prefixed with ~n~.
 | fy  | org-roam-dailies-find-yesterday   |             |
 | fr  | org-roam-dailies-find-tomorrow    |             |
 | g   | org-roam-graph                    |             |
+
+** Leetcode
+A couple of keybinds are use for application leetcode, They are prefixed with ~a~.
+#+name: keybinds-leetcode
+| Key | Function | Description |
+|-----+----------+-------------|
+|     |          | quit        |
+| ll  | leetcode |             |
+| ld  | leetcode-daily |             |
+| lo  | leetcode-show-problem-in-browser |             |
+| lO  | leetcode-show-problem-by-slub |             |
+| lS  | leetcode-submit |             |
+| ls  | leetcode-show-problem |             |
 
 ** Quit
 Why would I ever use any of these keybinds? They are prefixed with ~q~.

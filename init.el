@@ -121,6 +121,16 @@
 
 (column-number-mode)
 
+;; Enable line numbers for some modes
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+;; Override some modes which derive from the above
+(dolist (mode '(org-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
 (defun modeline-contitional-buffer-encoding ()
   "Hide \"LF UTF-8\" in modeline.
 
@@ -322,6 +332,79 @@ APPEND and COMPARE-FN, see `add-to-list'."
     (dolist (elt elements return)
       (setq return (add-to-list list-var elt append compare-fn)))))
 
+(defun scroll-half-page-up ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-down ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+  (defun dqv/switch-to-previous-buffer ()
+    "Switch to previously open buffer.
+        Repeated invocations toggle between the two most recently open buffers."
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+ (defun my-smarter-move-beginning-of-line (arg)
+   "Move point back to indentation of beginning of line.
+
+        Move point to the first non-whitespace character on this line.
+        If point is already there, move to the beginning of the line.
+        Effectively toggle between the first non-whitespace character and
+        the beginning of the line.
+
+        If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+        point reaches the beginning or end of the buffer, stop there."
+   (interactive "^p")
+   (setq arg (or arg 1))
+
+   ;; Move lines first
+   (when (/= arg 1)
+     (let ((line-move-visual nil))
+        (forward-line (1- arg))))
+
+   (let ((orig-point (point)))
+     (back-to-indentation)
+     (when (= orig-point (point))
+        (move-beginning-of-line 1))))
+
+ ;; remap C-a to `smarter-move-beginning-of-line'
+
+ (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
+
+(defun dqv/goto-match-paren (arg)
+  "Go to the matching if on (){}[], similar to vi style of % ."
+  (interactive "p")
+  (cond ((looking-at "[\[\(\{]") (evil-jump-item))
+        ((looking-back "[\]\)\}]" 1) (evil-jump-item))
+        ((looking-at "[\]\)\}]") (forward-char) (evil-jump-item))
+        ((looking-back "[\[\(\{]" 1) (backward-char) (evil-jump-item))
+        (t nil)))
+  (global-set-key (kbd "s-;") #'dqv/goto-match-paren)
+
+(defun dqv/delete-this-file (&optional trash)
+  "Delete this file.
+
+When called interactively, TRASH is t if no prefix argument is given.
+With a prefix argument, TRASH is nil."
+  (interactive)
+  (when (and (called-interactively-p 'interactive)
+             (not current-prefix-arg))
+    (setq trash t))
+  (if-let ((file (buffer-file-name)))
+      (when (y-or-n-p "Delete this file? ")
+        (delete-file file trash)
+        (kill-buffer (current-buffer)))
+    (user-error "Current buffer is not visiting a file")))
+
+    (defun dqv/kill-other-buffers ()
+      "Kill all other buffers."
+      (interactive)
+      (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
 (use-package which-key
   :straight (:build t)
   :defer t
@@ -480,19 +563,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
   ("k" text-scale-decrease "zoom out")
   ("0" text-scale-adjust "reset")
   ("q" nil "finished" :exit t))
-
-(defhydra writeroom-buffer-width ()
-  "
-^Width^        ^Other
-^^^^^^^^-----------------------
-[_j_] enlarge  [_r_/_0_] adjust
-[_k_] shrink   [_q_]^^   quit
-"
-  ("q" nil :exit t)
-  ("j" writeroom-increase-width "enlarge")
-  ("k" writeroom-decrease-width "shrink")
-  ("r" writeroom-adjust-width   "adjust")
-  ("0" writeroom-adjust-width   "adjust"))
 
 (defhydra windows-adjust-size ()
   "
@@ -1503,104 +1573,6 @@ the value `split-window-right', then it will be changed to
   :defer t
   :straight (:build t))
 
-(use-package elfeed
-  :defer t
-  :straight (:build t)
-  :config
-  (defun my/elfeed-filter-youtube-videos (orig-fun &rest args)
-    "Open with mpv the video leading to PATH"
-    (let ((link (elfeed-entry-link elfeed-show-entry)))
-      (when link
-        (if (string-match-p ".*youtube\.com.*watch.*" link)
-            ;; This is a YouTube video, open it with mpv
-            (progn
-              (require 'ytplay)
-              (ytplay link))
-          (apply orig-fun args)))))
-  
-  (advice-add 'elfeed-show-visit :around #'my/elfeed-filter-youtube-videos)
-  :custom
-  ((elfeed-search-filter "@6-months-ago")
-   (elfeed-db-directory  (expand-file-name ".elfeed-db"
-                                           user-emacs-directory))))
-
-(defun my/elfeed-filter-youtube-videos (orig-fun &rest args)
-  "Open with mpv the video leading to PATH"
-  (let ((link (elfeed-entry-link elfeed-show-entry)))
-    (when link
-      (if (string-match-p ".*youtube\.com.*watch.*" link)
-          ;; This is a YouTube video, open it with mpv
-          (progn
-            (require 'ytplay)
-            (ytplay link))
-        (apply orig-fun args)))))
-
-(advice-add 'elfeed-show-visit :around #'my/elfeed-filter-youtube-videos)
-
-(use-package elfeed-goodies
-  :defer t
-  :after elfeed
-  :commands elfeed-goodies/setup
-  :straight (:build t)
-  :init
-  (elfeed-goodies/setup)
-  :general
-  (dqv/underfine
-    :keymaps '(elfeed-show-mode-map elfeed-search-mode-map)
-    :packages 'elfeed
-    "DEL" nil
-    "s"   nil)
-  (dqv/evil
-    :keymaps 'elfeed-show-mode-map
-    :packages 'elfeed
-    "+" #'elfeed-show-tag
-    "-" #'elfeed-show-untag
-    "«" #'elfeed-show-prev
-    "»" #'elfeed-show-next
-    "b" #'elfeed-show-visit
-    "C" #'elfeed-kill-link-url-at-point
-    "d" #'elfeed-show-save-enclosure
-    "l" #'elfeed-show-next-link
-    "o" #'elfeed-goodies/show-ace-link
-    "q" #'elfeed-kill-buffer
-    "S" #'elfeed-show-new-live-search
-    "u" #'elfeed-show-tag--unread
-    "y" #'elfeed-show-yank)
-  (dqv/evil
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    "«" #'elfeed-search-first-entry
-    "»" #'elfeed-search-last-entry
-    "b" #'elfeed-search-browse-url
-    "f" '(:ignore t :wk "filter")
-    "fc" #'elfeed-search-clear-filter
-    "fl" #'elfeed-search-live-filter
-    "fs" #'elfeed-search-set-filter
-    "u" '(:ignore t :wk "update")
-    "us" #'elfeed-search-fetch
-    "uS" #'elfeed-search-update
-    "uu" #'elfeed-update
-    "uU" #'elfeed-search-update--force
-    "y" #'elfeed-search-yank)
-  (dqv/major-leader-key
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    "c" #'elfeed-db-compact
-    "t" '(:ignore t :wk "tag")
-    "tt" #'elfeed-search-tag-all-unread
-    "tu" #'elfeed-search-untag-all-unread
-    "tT" #'elfeed-search-tag-all
-    "tU" #'elfeed-search-untag-all))
-
-(use-package elfeed-org
-  :defer t
-  :after elfeed
-  :straight (:build t)
-  :init
-  (elfeed-org)
-  :config
-  (setq rmh-elfeed-org-files '("~/org/elfeed.org")))
-
 (use-package nov
   :straight (:build t)
   :defer t
@@ -1933,6 +1905,14 @@ deactivate `magit-todos-mode', otherwise enable it."
     "j" #'multi-vterm-next
     "k" #'multi-vterm-prev))
 
+(use-package leetcode
+  :ensure t
+  :straight (:build t))
+(setq leetcode-prefer-language "rust"
+      leetcode-prefer-sql "mysql"
+      leetcode-save-solutions t
+      leetcode-directory "~/Development/leetcode-solution")
+
 (general-define-key
  :states 'visual
  "M-["  #'insert-pair
@@ -2016,14 +1996,6 @@ deactivate `magit-todos-mode', otherwise enable it."
   :defer t
   :straight (:build t))
 
-(use-package writeroom-mode
-  :defer t
-  :straight (:build t)
-  :init (global-writeroom-mode 1)
-  :config
-  (setq writeroom-mode-line         t
-        writeroom-major-modes       '(text-mode org-mode markdown-mode nov-mode Info-mode)))
-
 (use-package maple-iedit
   :ensure nil
   :commands (maple-iedit-match-all maple-iedit-match-next maple-iedit-match-previous)
@@ -2040,6 +2012,136 @@ deactivate `magit-todos-mode', otherwise enable it."
               ;; ("C-n" . maple-iedit-match-next)
               ;; ("C-p" . maple-iedit-match-previous)
               ("C-t" . maple-iedit-skip-and-match-next)))
+
+  (use-package engine-mode
+    :config
+    (engine/set-keymap-prefix (kbd "C-c s"))
+    (setq browse-url-browser-function 'browse-url-default-macosx-browser
+          engine/browser-function 'browse-url-default-macosx-browser
+          )
+
+    (defengine duckduckgo
+      "https://duckduckgo.com/?q=%s"
+      :keybinding "d")
+
+    (defengine github
+      "https://github.com/search?ref=simplesearch&q=%s"
+      :keybinding "1")
+
+    (defengine gitlab
+      "https://gitlab.com/search?search=%s&group_id=&project_id=&snippets=false&repository_ref=&nav_source=navbar"
+      :keybinding "2")
+
+    (defengine stack-overflow
+      "https://stackoverflow.com/search?q=%s"
+      :keybinding "s")
+
+    (defengine npm
+      "https://www.npmjs.com/search?q=%s"
+      :keybinding "n")
+
+    (defengine crates
+      "https://crates.io/search?q=%s"
+      :keybinding "c")
+
+    (defengine localhost
+      "http://localhost:%s"
+      :keybinding "l")
+
+    (defengine translate
+      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      :keybinding "t")
+
+    (defengine youtube
+      "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+      :keybinding "y")
+
+    (defengine google
+      "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+      :keybinding "g")
+
+    (engine-mode 1))
+
+  (use-package bm
+    :demand t
+    :init
+    ;; restore on load (even before you require bm)
+    (setq bm-restore-repository-on-load t)
+
+    :config
+    ;; Allow cross-buffer 'next'
+    (setq bm-cycle-all-buffers t
+
+          ;; where to store persistant files
+          bm-repository-file "~/.emacs.d/bm-repository")
+
+    ;; save bookmarks
+    (setq-default bm-buffer-persistence t)
+
+    ;; Loading the repository from file when on start up.
+    (add-hook 'after-init-hook 'bm-repository-load)
+
+    ;; Saving bookmarks
+    (add-hook 'kill-buffer-hook #'bm-buffer-save)
+
+    ;; must save all bookmarks first.
+    (add-hook 'kill-emacs-hook #'(lambda nil
+                                   (bm-buffer-save-all)
+                                   (bm-repository-save)))
+
+    (add-hook 'after-save-hook #'bm-buffer-save)
+
+    ;; Restoring bookmarks
+    (add-hook 'find-file-hooks   #'bm-buffer-restore)
+    (add-hook 'after-revert-hook #'bm-buffer-restore)
+
+    (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+
+    ;; key binding
+    :bind (("C-M-s-l" . bm-toggle)
+           ("C-M-s-j" . bm-next)
+           ("C-M-s-k" . bm-previous)
+           ("C-M-s-o" . bm-show-all))
+    )
+
+(use-package hideshow
+  :hook
+  (prog-mode . hs-minor-mode)
+  :bind
+  ("C-<tab>" . hs-cycle)
+  ("C-<iso-lefttab>" . hs-global-cycle)
+  ("C-S-<tab>" . hs-global-cycle))
+(defun hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children)))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))
 
 (use-package dirvish
   :straight (:build t)
@@ -2300,7 +2402,6 @@ deactivate `magit-todos-mode', otherwise enable it."
   (magit-status "/yadm::"))
 
 (use-package bufler
-  :disabled
   :straight (:build t)
   :bind (("C-M-j" . bufler-switch-buffer)
          ("C-M-k" . bufler-workspace-frame-set))
@@ -3796,9 +3897,7 @@ Spell Commands^^           Add To Dictionary^^              Other
                                 (straight-pull-all)
                                 (straight-rebuild-all)))))))
 
-  (setq dashboard-items '((recents  . 15)
-                          (agenda   . 10)
-                          (projects . 10)))
+  (setq dashboard-items '((agenda   . 15)))
   (dashboard-setup-startup-hook)
   :init
   (add-hook 'after-init-hook 'dashboard-refresh-buffer))
@@ -4040,18 +4139,20 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :init (winum-mode))
 
-(general-define-key
- :keymaps 'global-map
- "<mouse-2>" nil
- "<mouse-3>" nil)
+(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
+(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
+  (general-define-key
+   :keymaps 'global-map
+   "<mouse-2>" nil
+   "<mouse-3>" nil)
 
-(dqv/evil
-  :packages '(counsel)
-  "U"   #'evil-redo
-  "C-a" #'beginning-of-line
-  "C-e" #'end-of-line
-  "C-y" #'yank
-  "M-y" #'counsel-yank-pop)
+  (dqv/evil
+    :packages '(counsel)
+    "U"   #'evil-redo
+    "C-a" #'beginning-of-line
+    "C-e" #'end-of-line
+    "C-y" #'yank
+    "M-y" #'counsel-yank-pop)
 
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
@@ -4059,6 +4160,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
+  "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
 
   "a" '(:ignore t :wk "apps")
   "ac" #'calc
@@ -4146,6 +4248,7 @@ Spell Commands^^           Add To Dictionary^^              Other
 
   "f" '(:ignore t :wk "files")
   "ff" #'counsel-find-file
+  "fD" #'dqv/delete-this-file
   "fF" #'ivy-quick-find-files
   "fh" #'hexl-find-file
   "fr" #'counsel-recentf
@@ -4221,13 +4324,10 @@ Spell Commands^^           Add To Dictionary^^              Other
   "w7" '(winum-select-window-7 :wk t)
   "w8" '(winum-select-window-8 :wk t)
   "w9" '(winum-select-window-9 :wk t)
-  "wb" #'kill-buffer-and-delete-window
+  "wc" #'kill-buffer-and-delete-window
   "wd" #'delete-window
   "wO" #'dqv/kill-other-buffers
   "wo" #'delete-other-windows
-  "ww" '(:ignore t :wk "writeroom")
-  "ww." #'writeroom-buffer-width/body
-  "www" #'writeroom-mode
 
   "q" '(:ignore t :wk "quit")
   "qf" #'delete-frame
@@ -4253,6 +4353,13 @@ Spell Commands^^           Add To Dictionary^^              Other
   "nfy" #'org-roam-dailies-find-yesterday
   "nfr" #'org-roam-dailies-find-tomorrow
   "ng" #'org-roam-graph
+  "a" '(:ignore t :wk "quit")
+  "all" #'leetcode
+  "ald" #'leetcode-daily
+  "alo" #'leetcode-show-problem-in-browser
+  "alO" #'leetcode-show-problem-by-slub
+  "alS" #'leetcode-submit
+  "als" #'leetcode-show-problem
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
