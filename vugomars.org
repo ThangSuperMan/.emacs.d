@@ -2269,20 +2269,36 @@ to anything user-defined. Let’s all-the-iconify this!
                                   ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
 #+end_src
 
+*** Roam
+#+begin_src emacs-lisp
+(use-package org-roam
+  :ensure t
+  :hook (after-init . org-roam-mode)
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/Dropbox/Roam")
+  (org-roam-completion-everywhere t)
+  (org-roam-completion-system 'ivy)
+  (org-roam-capture-templates
+   '(("d" "default" plain
+      "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("l" "programming language" plain
+      "* Characteristics\n\n- Family: %?\n- Inspired by: \n\n* Reference:\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: Project")
+      :unnarrowed t)))
+  :config
+  (org-roam-setup))
+#+end_src
 * Packages Configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configurationije0fl6184j0
-:END:
 ** Autocompletion
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletionr8n1fl6184j0
-:END:
 *** Code Autocompletion
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletion-Code-Autocompletion4no1fl6184j0
-:END:
-Company is, in my opinion, the best autocompleting engine for Emacs,
-and it is one of the most popular if not /the/ most popular.
+Company is, in my opinion, the best autocompleting engine for Emacs, and it is one of the most popular if not /the/ most popular.
 #+begin_src emacs-lisp
 (use-package company
   :straight (:build t)
@@ -6218,6 +6234,7 @@ Undefining some stuff to make keybind prefixes work correctly.
 
   <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
   <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
+  <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6441,6 +6458,23 @@ Why would I ever use any of these keybinds? They are prefixed with ~a~.
 | gd  | org-gcal-delete-at-point |             |
 | gr  | org-gcal-request-token   |             |
 | gt  | org-gcal-toggle-debug    |             |
+
+** Org Roam
+They are prefixed with ~n~.
+#+name: keybinds-roam
+| Key | Function                          | Description |
+|-----+-----------------------------------+-------------|
+|     |                                   | quit        |
+| n   | org-roam-node-find                |             |
+| i   | org-roam-node-insert              |             |
+| l   | org-roam-buffer-toggle            |             |
+| ct  | org-roam-dailies-capture-today    |             |
+| cT  | org-roam-dailies-capture-tomorrow |             |
+| fd  | org-roam-dailies-find-date        |             |
+| ft  | org-roam-dailies-find-today       |             |
+| fy  | org-roam-dailies-find-yesterday   |             |
+| fr  | org-roam-dailies-find-tomorrow    |             |
+| g   | org-roam-graph                    |             |
 
 ** Quit
 Why would I ever use any of these keybinds? They are prefixed with ~q~.

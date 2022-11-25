@@ -1296,6 +1296,30 @@ the value `split-window-right', then it will be changed to
                                   ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
                                   ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
 
+(use-package org-roam
+  :ensure t
+  :hook (after-init . org-roam-mode)
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/Dropbox/Roam")
+  (org-roam-completion-everywhere t)
+  (org-roam-completion-system 'ivy)
+  (org-roam-capture-templates
+   '(("d" "default" plain
+      "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("l" "programming language" plain
+      "* Characteristics\n\n- Family: %?\n- Inspired by: \n\n* Reference:\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: Project")
+      :unnarrowed t)))
+  :config
+  (org-roam-setup))
+
 (use-package company
   :straight (:build t)
   :defer t
@@ -4218,6 +4242,17 @@ Spell Commands^^           Add To Dictionary^^              Other
   "agd" #'org-gcal-delete-at-point
   "agr" #'org-gcal-request-token
   "agt" #'org-gcal-toggle-debug
+  "n" '(:ignore t :wk "quit")
+  "nn" #'org-roam-node-find
+  "ni" #'org-roam-node-insert
+  "nl" #'org-roam-buffer-toggle
+  "nct" #'org-roam-dailies-capture-today
+  "ncT" #'org-roam-dailies-capture-tomorrow
+  "nfd" #'org-roam-dailies-find-date
+  "nft" #'org-roam-dailies-find-today
+  "nfy" #'org-roam-dailies-find-yesterday
+  "nfr" #'org-roam-dailies-find-tomorrow
+  "ng" #'org-roam-graph
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
