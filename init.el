@@ -1721,6 +1721,38 @@ deactivate `magit-todos-mode', otherwise enable it."
     "es" #'forge-edit-topic-state
     "et" #'forge-edit-topic-title))
 
+ (defun buffer-insert-at-end (string)
+    "Insert STRING at the maximal point in a buffer."
+    (save-excursion
+      (goto-char (point-max))
+      (end-of-line)
+      (insert ?\n string)
+      (unless (string-suffix-p "\n" string)
+        (insert ?\n))))
+
+  (defun get-knuth-number-from-string (string)
+    "Return KNUTH issue number from STRING.
+  Return nil if STRING does not contain a KNUTH issue.
+  STRING may be nil."
+    (if (and string (string-match "\\(KNUTH-[[:digit:]]\+\\)" string))
+        (match-string 1 string)
+      nil))
+
+  (defun insert-knuth-ticket-number-from-branch ()
+    "If we're on a KNUTH feature branch, insert the ticket number."
+    (interactive)
+    (let ((knuth (get-knuth-number-from-string (magit-get-current-branch))))
+      (if (and knuth (not (buffer-line-matches-p (concat "^" knuth)))) (buffer-insert-at-end knuth))))
+
+  (defun buffer-line-matches-p (needle)
+    "Return t if the last line matches NEEDLE.
+  Ignores comments"
+    (save-excursion
+      (goto-char 0)
+      (search-forward-regexp needle nil 'noerror)))
+
+  (add-hook 'git-commit-setup-hook 'insert-knuth-ticket-number-from-branch)
+
 (use-package ripgrep
   :if (executable-find "rg")
   :straight (:build t)
@@ -2210,22 +2242,53 @@ deactivate `magit-todos-mode', otherwise enable it."
   (magit-status "/yadm::"))
 
 (use-package bufler
-  :straight (bufler :build t
-                    :files (:defaults (:exclude "helm-bufler.el")))
-  :defer t
-  :general
-  (dqv/evil
-   :keymaps  'bufler-list-mode-map
-   :packages 'bufler
-   "?"   #'hydra:bufler/body
-   "g"   #'bufler
-   "f"   #'bufler-list-group-frame
-   "F"   #'bufler-list-group-make-frame
-   "N"   #'bufler-list-buffer-name-workspace
-   "k"   #'bufler-list-buffer-kill
-   "p"   #'bufler-list-buffer-peek
-   "s"   #'bufler-list-buffer-save
-   "RET" #'bufler-list-buffer-switch))
+  :disabled
+  :straight (:build t)
+  :bind (("C-M-j" . bufler-switch-buffer)
+         ("C-M-k" . bufler-workspace-frame-set))
+  :config
+  (evil-collection-define-key 'normal 'bufler-list-mode-map
+    (kbd "RET")   'bufler-list-buffer-switch
+    (kbd "M-RET") 'bufler-list-buffer-peek
+    "D"           'bufler-list-buffer-kill)
+
+  (setf bufler-groups
+        (bufler-defgroups
+          ;; Subgroup collecting all named workspaces.
+          (group (auto-workspace))
+          ;; Subgroup collecting buffers in a projectile project.
+          (group (auto-projectile))
+          ;; Grouping browser windows
+          (group
+           (group-or "Browsers"
+                     (name-match "Vimb" (rx bos "vimb"))
+                     (name-match "Qutebrowser" (rx bos "Qutebrowser"))
+                     (name-match "Chromium" (rx bos "Chromium"))))
+          (group
+           (group-or "Chat"
+                     (mode-match "Telega" (rx bos "telega-"))))
+          (group
+           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+           (group-or "Help/Info"
+                     (mode-match "*Help*" (rx bos (or "help-" "helpful-")))
+                     ;; (mode-match "*Helpful*" (rx bos "helpful-"))
+                     (mode-match "*Info*" (rx bos "info-"))))
+          (group
+           ;; Subgroup collecting all special buffers (i.e. ones that are not
+           ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+           ;; through to other groups, so they end up grouped with their project buffers).
+           (group-and "*Special*"
+                      (name-match "**Special**"
+                                  (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace" "Pinentry") "*"))
+                      (lambda (buffer)
+                        (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                             buffer)
+                                    (funcall (mode-match "Dired" (rx bos "dired"))
+                                             buffer)
+                                    (funcall (auto-file) buffer))
+                          "*Special*"))))
+          ;; Group remaining buffers by major mode.
+          (auto-mode))))
 
 (use-package helpful
   :straight (:build t)
@@ -3687,7 +3750,16 @@ Spell Commands^^           Add To Dictionary^^              Other
   :hook ((prog-mode     . git-gutter-mode)
          (org-mode      . git-gutter-mode)
          (markdown-mode . git-gutter-mode)
-         (latex-mode    . git-gutter-mode)))
+         (latex-mode    . git-gutter-mode))
+  :config
+  (setq git-gutter:update-interval 2)
+  ;; These characters are used in terminal mode
+  (setq git-gutter:modified-sign "≡")
+  (setq git-gutter:added-sign "≡")
+  (setq git-gutter:deleted-sign "≡")
+  (set-face-foreground 'git-gutter:added "LightGreen")
+  (set-face-foreground 'git-gutter:modified "LightGoldenrod")
+  (set-face-foreground 'git-gutter:deleted "LightCoral"))
 
 (use-package all-the-icons
   :defer t
