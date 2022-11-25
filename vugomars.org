@@ -1,33 +1,197 @@
 #+title: Emacs Configuration
 #+setupfile: headers
-#+html_head: <meta name="description" content="Phundrak’s Emacs Configuration" />
-#+html_head: <meta property="og:title" content="Phundrak’s Emacs Configuration" />
-#+html_head: <meta property="og:description" content="Phundrak’s Emacs Configuration Detailed" />
+#+html_head: <meta name="description" content="Vugomars' Emacs" />
+#+html_head: <meta property="og:title" content="Vugomars' Emacs" />
+#+html_head: <meta property="og:description" content="Vugomars' Emacs" />
 #+property: header-args:emacs-lisp  :mkdirp yes :lexical t :exports code
 #+property: header-args:emacs-lisp+ :tangle ./init.el
 #+property: header-args:emacs-lisp+ :mkdirp yes :noweb no-export
+
+* Package Management
+** Repositories
+By default, only GNU’s repositories are available to the package managers of Emacs. I also want to use Melpa and org-mode’s repository, so let’s add them! Note that the stock /elpa/ repository is renamed to /gnu/ due to the addition of another Elpa repository, /nongnu/, which will hosts packages that do not conform to the FSF’s copyright assignment. Both the /gnu/ and the /nonfree/ repositories are Elpa repositories now, and they are renamed here in order to avoid any confusion between the two of them. Melpa is a community-maintained repository which contains an absurd amount of Emacs packages.
+#+begin_src emacs-lisp
+(setq package-archives '(("melpa"  . "https://melpa.org/packages/")
+                         ("gnu"    . "https://elpa.gnu.org/packages/")
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+#+end_src
+
+** Straight
+For my package management, I prefer to use ~straight~ ([[https://github.com/raxod502/straight.el][Github]]). This is due to its capacity of integrating nicely with ~use-package~, which also supports ~general~ which I use for my keybindings (see below), but also because with it I can specify where to retrieve packages that are not on MELPA or ELPA but on Github and other online Git repositories too. First, let’s bootstrap straight.
+#+begin_src emacs-lisp
+(defvar bootstrap-version)
+(defvar comp-deferred-compilation-deny-list ()) ; workaround, otherwise straight shits itself
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+end_src
+
+Now, we can refresh our package list in order to be able to install stuff.
+#+begin_src emacs-lisp
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+
+#+end_src
+
+From time to time, I fork some packages either because I’m trying to implement something new in said package, or because the package is unmaintained and I want to continue developing it a bit more. Straight provides a nice feature for using forks of a package with its ~:fork~ option. If set to ~t~, then straight will attempt to retrieve the package with the same name but with a different username on the same host. This username is retrieved through the following variable:
+#+begin_src emacs-lisp
+(setq straight-host-usernames
+      '((github . "vugomars")
+        (gitlab . "vugomars")))
+#+end_src
+
+The huge advantage of straight is it clones through git the packages it installs. This means development can be done directly on the downloaded package. However, Forge (a Magit extension for interacting with websites such as Github, Gitlab, and such) interacts by default with the forge described by the ~origin~ remote, which isn’t necessarily the one I want Forge to interact with by default. Therefore, all default remotes are named ~straight~ so it won’t collide with my regular development flow.
+#+begin_src emacs-lisp
+(setq straight-vc-git-default-remote-name "straight")
+#+end_src
+
+We finally come to the ~use-package~ installation. This is done like so:
+#+begin_src emacs-lisp
+(straight-use-package '(use-package :build t))
+(setq use-package-always-ensure t)
+#+end_src
 
 * Basic Configuration
 ** Early Init
 The early init file is the file loaded before anything else in Emacs. This is where I put some options in order to disable as quickly as possible some built-in features of Emacs before they can be even loaded, speeding Emacs up a bit.
 
 #+begin_src emacs-lisp :mkdirp yes :tangle ~/.emacs.d/early-init.el :export code :results silent :lexical t
-(setq package-enable-at-startup nil
-      inhibit-startup-message   t
-      frame-resize-pixelwise    t  ; fine resize
-      package-native-compile    t) ; native compile packages
-(scroll-bar-mode -1)               ; disable scrollbar
-(tool-bar-mode -1)                 ; disable toolbar
-(tooltip-mode -1)                  ; disable tooltips
-(set-fringe-mode 10)               ; give some breathing room
-(menu-bar-mode -1)                 ; disable menubar
-(blink-cursor-mode 0)              ; disable blinking cursor
-(setq gc-cons-threshold (* 1024 1024 1024))
+;; NOTE: Setting `font-lock-multiline' to 'undecided' org-mode to become unusable:
+;; Error during redisplay: (jit-lock-function 22138) signaled (args-out-of-range 0 16341)
+(setq-default font-lock-multiline nil)
 
 ;;; Better defaults
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
 (setq default-input-method nil)
+
+;; better simple ui
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+(menu-bar-mode -1)
+(blink-cursor-mode 0)
+
+
+(setq visible-bell nil ;; set to non-nil to flash!
+      ring-bell-function 'ignore
+      large-file-warning-threshold (* 50 1024 1024) ;; change to 50 MiB
+      use-short-answers t ;; y or n istead of yes or no
+      confirm-kill-emacs 'y-or-n-p ;; confirm before quitting
+      ;; initial-scratch-message t
+      inhibit-startup-message t
+      frame-resize-pixelwise t
+      delete-by-moving-to-trash t)
+
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+(setq epg-gpg-program "gpg2")
+
+(setq auth-sources '("~/.authinfo.gpg") ;; Defaults to GPG
+      auth-source-do-cache t
+      auth-source-cache-expiry 86400 ; All day, defaut is 2h (7200)
+      password-cache t
+      password-cache-expiry 86400)
+
+;;; Undo
+(setq undo-limit        10000000 ;; 1MB (default is 160kB)
+      undo-strong-limit 100000000 ;; 100MB (default is 240kB)
+      undo-outer-limit  1000000000) ;; 1GB (default is 24MB)
+
+;;; Editing
+(setq display-line-numbers-type 'relative
+      tab-always-indent nil
+      whitespace-action '(cleanup auto-cleanup))
+
+(setq-default truncate-lines nil
+              fill-column 80
+              indent-tabs-mode nil
+              display-line-numbers-width 3
+              tab-width 2)
+
+;;; Backups
+;; Disable backup and lockfiles
+(setq create-lockfiles nil
+      make-backup-files nil
+      version-control t ;; number each backup file
+      backup-by-copying t ;; copy instead of renaming current file
+      delete-old-versions t ;; clean up after itself
+      kept-old-versions 5
+      kept-new-versions 5
+      tramp-backup-directory-alist backup-directory-alist)
+
+;;; Auto-Saving, sessions...
+;; Enable auto-save (use `recover-file' or `recover-session' to recover)
+(setq auto-save-default t
+      auto-save-include-big-deletions t
+      auto-save-file-name-transforms
+      (list (list "\\`/[^/]*:\\([^/]*/\\)*\\([^/]*\\)\\'"
+                  ;; Prefix tramp autosaves to prevent conflicts with local ones
+                  (concat auto-save-list-file-prefix "tramp-\\2") t)
+            (list ".*" auto-save-list-file-prefix t)))
+
+(setq sentence-end-double-space nil)
+
+;;; Scrolling
+(setq hscroll-step 1
+      hscroll-margin 0
+      scroll-step 1
+      scroll-margin 0
+      scroll-conservatively 101
+      scroll-preserve-screen-position 'always
+      auto-window-vscroll nil
+      fast-but-imprecise-scrolling t)
+
+(setq-default scroll-up-aggressively 0.01
+              scroll-down-aggressively 0.01)
+
+(setq window-combination-resize t)
+
+(setq recentf-max-saved-items 100)
+
+;;; Enable global modes
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
+(add-hook 'text-mode-hook #'display-line-numbers-mode)
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+
+;; Scroll pixel by pixel
+(pixel-scroll-mode 1)
+
+;; Window layout undo/redo (`winner-undo' / `winner-redo')
+(winner-mode 1)
+
+;; Highlight current line
+(global-hl-line-mode 1)
+
+;; Enable recentf-mode globally
+(recentf-mode 1)
+
+;; Save place in files
+(save-place-mode 1)
+
+;; Enable saving minibuffer history
+(savehist-mode 1)
+
+;; Show line and column numbers (cursor position) in mode-line
+(line-number-mode 1)
+(column-number-mode 1)
+
+;; Wrap long lines
+(global-visual-line-mode 1)
+
+;; Better handling for files with so long lines
+(global-so-long-mode 1)
+
+;; Global SubWord mode
+(global-subword-mode 1)
 
 ;; Set Fullscreen
 (set-frame-parameter (selected-frame) 'fullscreen 'maximized)
@@ -40,6 +204,12 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 
 ** Emacs Behavior
 *** Editing Text in Emacs
+#+begin_src emacs-lisp
+  ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
+  (setq user-emacs-directory (expand-file-name "~/.emacs.d/")
+        url-history-file (expand-file-name "url/history" user-emacs-directory))
+#+end_src
+
 I *never* want to keep trailing spaces in my files, which is why I’m doing this:
 #+begin_src emacs-lisp
 (add-hook 'before-save-hook #'whitespace-cleanup)
@@ -117,9 +287,6 @@ formatters’ config file, and tabs look bat in EmacsLisp anyway, so
 I’ll stick with spaces by default and change it where needed.
 
 *** Programming Modes
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Programming-Modesfnmiel6184j0
-:END:
 First off, my definition of what makes a “programming mode” doesn’t exactly
 fit mine, so on top of ~prog-mode~, let’s add a few other modes.
 #+name: line-number-modes-table
@@ -137,9 +304,6 @@ fit mine, so on top of ~prog-mode~, let’s add a few other modes.
 #+end_src
 
 **** Line Number
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Programming-Modes-Line-Numbermcqiel6184j0
-:END:
 Since version 26, Emacs has a built-in capacity of displaying line
 numbers on the left-side of the buffer. This is a fantastic feature
 that should actually be the default for all programming modes.
@@ -153,10 +317,7 @@ that should actually be the default for all programming modes.
 :PROPERTIES:
 :CUSTOM_ID: Basic-configuration-Emacs-Behavior-Programming-Modes-Folding-code16uiel6184j0
 :END:
-Most programming languages can usually have their code folded, be it
-code between curly braces, chunks of comments or code on another level
-of indentation (Python, why…?). The minor-mode that enables that is
-~hs-minor-mode~, let’s enable it for all of these programming modes:
+Most programming languages can usually have their code folded, be it code between curly braces, chunks of comments or code on another level of indentation (Python, why…?). The minor-mode that enables that is ~hs-minor-mode~, let’s enable it for all of these programming modes:
 #+begin_src emacs-lisp
 (dolist (mode '(<<prog-modes-gen()>>))
   (add-hook mode #'hs-minor-mode))
@@ -210,16 +371,30 @@ It is also very impolite to keep a certain version of a file in its buffer when 
 #+end_src
 
 Much more polite! Note that if the buffer is modified and its changes haven’t been saved, it will not automatically revert the buffer and your unsaved changes won’t be lost. Very polite!
-*** Misc
-Let’s raise Emacs undo memory to 10MB, and make Emacs auto-save our files by default.
+*** Performance Upgrade
+**** Emacs Startup
+- Tính toán garbage collections khi khởi động Emacs và thời gian loaded.
 #+begin_src emacs-lisp
-(setq undo-limit        100000000
-      auto-save-default t)
+;; Profile emacs startup
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "*** Emacs loaded in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
 #+end_src
 
+**** Keep .emacs.d Clean
 #+begin_src emacs-lisp
-(setq window-combination-resize t) ; take new window space from all other windows
+  ;; Keep customization settings in a temporary file (thanks Ambrevar!)
+  (setq custom-file
+        (if (boundp 'server-socket-dir)
+            (expand-file-name "custom.el" server-socket-dir)
+          (expand-file-name (format "emacs-custom-%s.el" (user-uid)) temporary-file-directory)))
+  (load custom-file t)
 #+end_src
+
 
 ** Personal Information
 Emacs needs to know its master! For various reasons by the way, some packages rely of these variables to know who it is talking to or dealing with, such as ~mu4e~ which will guess who you are if you haven’t set it up correctly.
@@ -231,6 +406,7 @@ Emacs needs to know its master! For various reasons by the way, some packages re
 #+end_src
 
 ** Visual Configuration
+*** Basic
 The first visual setting in this section will activate the visible bell. What it does is I get a visual feedback each time I do something Emacs doesn’t agree with, like tring to go up a line when I’m already at the top of the buffer.
 #+begin_src emacs-lisp
 (setq visible-bell t)
@@ -293,23 +469,70 @@ Now, let’s automate the call to this function in order to apply the modificati
 (add-hook 'after-change-major-mode-hook #'modeline-contitional-buffer-encoding)
 #+end_src
 
-*** Fonts
-I don’t like the default font I usually have on my machines, I really don’t. I prefer [[https://github.com/microsoft/cascadia-code][Cascadia Code]], as it also somewhat supports the [[https://www.internationalphoneticassociation.org/][IPA]].
+*** Font
+**** Set The Font
 #+begin_src emacs-lisp
-(defvar dqv/default-font-size 170
-  "Default font size.")
+  (set-face-attribute 'default nil
+                      :font "JetBrains Mono"
+                      :weight 'light
+                      :height 160)
 
-(defvar dqv/default-font-name "Cascadia Code"
-  "Default font.")
+  ;; Set the fixed pitch face
+  (set-face-attribute 'fixed-pitch nil
+                      :font "JetBrains Mono"
+                      :weight 'light
+                      :height 160)
 
-(defun my/set-font ()
-  (when (find-font (font-spec :name dqv/default-font-name))
-    (set-face-attribute 'default nil
-                        :font dqv/default-font-name
-                        :height dqv/default-font-size)))
+  ;; Set the variable pitch face
+  (set-face-attribute 'variable-pitch nil
+                      ;; :font "Cantarell"
+                      :font "Iosevka Aile"
+                      :height 160
+                      :weight 'light)
+#+end_src
 
-(my/set-font)
-(add-hook 'server-after-make-frame-hook #'my/set-font)
+**** Emojis
+#+begin_src emacs-lisp
+  (set-fontset-font t 'symbol "Noto Color Emoji")
+  (set-fontset-font t 'symbol "Symbola" nil 'append)
+
+  (use-package emojify
+    :straight (:build t)
+    :general
+    (dqv/leader-keys
+      "i e" '(emojify-insert-emoji :wk "Emoji"))
+    :custom
+    (emojify-emoji-set "emojione-v2.2.6")
+    (emojify-emojis-dir (concat user-emacs-directory "emojify/"))
+    (emojify-display-style 'image)
+    :config
+    (global-emojify-mode 1))
+#+end_src
+
+**** Unicode
+#+begin_src emacs-lisp
+(defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
+  (let* ((block-idx (cl-position-if
+                         (lambda (i) (string-equal (car i) block-name))
+                         unicode-fonts-block-font-mapping))
+         (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
+         (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
+    (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
+          `(,updated-block))))
+
+(use-package unicode-fonts
+  :custom
+  (unicode-fonts-skip-font-groups '(low-quality-glyphs))
+  :config
+  ;; Fix the font mappings to use the right emoji font
+  (mapcar
+    (lambda (block-name)
+      (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
+    '("Dingbats"
+      "Emoticons"
+      "Miscellaneous Symbols and Pictographs"
+      "Transport and Map Symbols"))
+  (unicode-fonts-setup))
 #+end_src
 
 *** Frame Title
@@ -453,13 +676,7 @@ focus the new window immediately.
 #+end_src
 
 ** Extend ~add-to-list~
-:PROPERTIES:
-:CUSTOM_ID: Custom-Elisp-Extend-add-to-list-eh2325605gj0
-:END:
-One function I find missing regarding ~add-to-list~ is ~add-all-to-list~
-so I can add multiple elements to a list at once. Instead, with
-vanilla Emacs, I have to repeatedly call ~add-to-list~. That’s not very
-clean. Let’s declare this missing function:
+One function I find missing regarding ~add-to-list~ is ~add-all-to-list~ so I can add multiple elements to a list at once. Instead, with vanilla Emacs, I have to repeatedly call ~add-to-list~. That’s not very clean. Let’s declare this missing function:
 #+begin_src emacs-lisp
 (defun add-all-to-list (list-var elements &optional append compare-fn)
   "Add ELEMENTS to the value of LIST-VAR if it isn’t there yet.
@@ -471,108 +688,10 @@ APPEND and COMPARE-FN, see `add-to-list'."
       (setq return (add-to-list list-var elt append compare-fn)))))
 #+end_src
 
-* Package Management
-:PROPERTIES:
-:CUSTOM_ID: Package-Managementqpwkel6184j0
-:END:
-** Repositories
-:PROPERTIES:
-:CUSTOM_ID: Package-Management-Repositoriesab0lel6184j0
-:END:
-By default, only GNU’s repositories are available to the package
-managers of Emacs. I also want to use Melpa and org-mode’s repository,
-so let’s add them! Note that the stock /elpa/ repository is renamed to
-/gnu/ due to the addition of another Elpa repository, /nongnu/, which will
-hosts packages that do not conform to the FSF’s copyright assignment.
-Both the /gnu/ and the /nonfree/ repositories are Elpa repositories now,
-and they are renamed here in order to avoid any confusion between the
-two of them. Melpa is a community-maintained repository which contains
-an absurd amount of Emacs packages.
-#+begin_src emacs-lisp
-(setq package-archives '(("melpa"  . "https://melpa.org/packages/")
-                         ("gnu"    . "https://elpa.gnu.org/packages/")
-                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
-#+end_src
-
-** Straight
-:PROPERTIES:
-:CUSTOM_ID: Package-Management-Straightry3lel6184j0
-:END:
-For my package management, I prefer to use ~straight~ ([[https://github.com/raxod502/straight.el][Github]]). This is
-due to its capacity of integrating nicely with ~use-package~, which also
-supports ~general~ which I use for my keybindings (see below), but also
-because with it I can specify where to retrieve packages that are not
-on MELPA or ELPA but on Github and other online Git repositories too.
-First, let’s bootstrap straight.
-#+begin_src emacs-lisp
-(defvar bootstrap-version)
-(defvar comp-deferred-compilation-deny-list ()) ; workaround, otherwise straight shits itself
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-#+end_src
-
-Now, we can refresh our package list in order to be able to install
-stuff.
-#+begin_src emacs-lisp
-(package-initialize)
-(unless package-archive-contents
-  (package-refresh-contents))
-
-#+end_src
-
-From time to time, I fork some packages either because I’m trying to
-implement something new in said package, or because the package is
-unmaintained and I want to continue developing it a bit more. Straight
-provides a nice feature for using forks of a package with its ~:fork~
-option. If set to ~t~, then straight will attempt to retrieve the
-package with the same name but with a different username on the same
-host. This username is retrieved through the following variable:
-#+begin_src emacs-lisp
-(setq straight-host-usernames
-      '((github . "vugomars")
-        (gitlab . "vugomars")))
-#+end_src
-
-The huge advantage of straight is it clones through git the packages
-it installs. This means development can be done directly on the
-downloaded package. However, Forge (a Magit extension for interacting
-with websites such as Github, Gitlab, and such) interacts by default
-with the forge described by the ~origin~ remote, which isn’t necessarily
-the one I want Forge to interact with by default. Therefore, all
-default remotes are named ~straight~ so it won’t collide with my regular
-development flow.
-#+begin_src emacs-lisp
-(setq straight-vc-git-default-remote-name "straight")
-#+end_src
-
-We finally come to the ~use-package~ installation. This is done like so:
-#+begin_src emacs-lisp
-(straight-use-package '(use-package :build t))
-(setq use-package-always-ensure t)
-#+end_src
 
 * Keybinding Management
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management728lel6184j0
-:END:
 ** Which-key
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Which-keymsblel6184j0
-:END:
-Which key is, I think, one of my favorite quality of life package.
-When you begin a keybind, Emacs will show you all keybinds you can
-follow the first one with in order to form a full keychord. Very
-useful when you have a lot of keybinds and don’t remember exactly what
-is what.
+Which key is, I think, one of my favorite quality of life package. When you begin a keybind, Emacs will show you all keybinds you can follow the first one with in order to form a full keychord. Very useful when you have a lot of keybinds and don’t remember exactly what is what.
 #+begin_src emacs-lisp
 (use-package which-key
   :straight (:build t)
@@ -584,19 +703,7 @@ is what.
 #+end_src
 
 ** General
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Generalycflel6184j0
-:END:
-General is an awesome package for managing keybindings. Not only is it
-oriented towards keychords by default (which I love), but it also
-provides some integration with evil so that we can declare keybindings
-for certain states only! This is a perfect replacement for ~define-key~,
-~evil-define-key~, and any other function for defining keychords. And it
-is also possible to declare a prefix for my keybindings! By default,
-all keybinds will be prefixed with ~SPC~ and keybinds related to a
-specific mode (often major modes) will be prefixed by a comma ~,~ (and
-by ~C-SPC~ and ~M-m~ respectively when in ~insert-mode~ or ~emacs-mode~). You
-can still feel some influence from my Spacemacs years here.
+General is an awesome package for managing keybindings. Not only is it oriented towards keychords by default (which I love), but it also provides some integration with evil so that we can declare keybindings for certain states only! This is a perfect replacement for ~define-key~, ~evil-define-key~, and any other function for defining keychords. And it is also possible to declare a prefix for my keybindings! By default, all keybinds will be prefixed with ~SPC~ and keybinds related to a specific mode (often major modes) will be prefixed by a comma ~,~ (and by ~C-SPC~ and ~M-m~ respectively when in ~insert-mode~ or ~emacs-mode~). You can still feel some influence from my Spacemacs years here.
 #+begin_src emacs-lisp
 (use-package general
   :straight (:build t)
@@ -1857,13 +1964,7 @@ Both these classes have to be added to ~org-latex-classes~ like so:
 #+END_SRC
 
 *** Projects
-:PROPERTIES:
-:header-args:emacs-lisp: :tangle no :exports code :results silent
-:CUSTOM_ID: Packages-Configuration-Org-mode-Projectsf2h5fl6184j0
-:END:
-Another great features of Org-mode is the Org projects that allow the user to
-easily publish a bunch of org files to a remote location. Here is the current
-declaration of my projects, which will be detailed later:
+Another great features of Org-mode is the Org projects that allow the user to easily publish a bunch of org files to a remote location. Here is the current declaration of my projects, which will be detailed later:
 #+NAME: org-publish-projects
 #+BEGIN_SRC emacs-lisp :noweb yes
 <<org-proj-config-setup>>
@@ -1879,200 +1980,11 @@ declaration of my projects, which will be detailed later:
         <<org-proj-lang>>))
 #+END_SRC
 
-**** Configuration website
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Projects-Configuration-websitelki5fl6184j0
-:END:
-This is my configuration for exporting my dotfiles to my website in a web format
-only. No PDFs or anything, just HTML. Please note that I do not use that often
-anymore, I much prefer the automatic script that I have which deploys through my
-Drone instance my website on git pushes.
-
-And before we get into the actual configuration, I would like to introduce a
-couple of variables. This is a bit more verbose than if I declared everything
-manually, but now I can change all three values at the same time without a
-hasle.
-#+NAME: org-proj-config-setup
-#+BEGIN_SRC emacs-lisp
-(defvar phundrak//projects-config-target
-  "/ssh:Tilo:~/www/phundrak.com/config"
-  "Points to where exported files for config.phundrak.com should be put.")
-(defvar phundrak//projects-config-source
-  "~/org/config/"
-  "Points to where the sources for config.phundrak.com are.")
-(defvar phundrak//projects-config-language
-  "en"
-  "Language of the website config.phundrak.com.")
-(defvar phundrak//projects-config-recursive
-  t
-  "Defines whether subdirectories should be parsed for config.phundrak.com.")
-#+END_SRC
-
-Now, here is my configuration. In this snippet, my org files located in my
-source directory get exported in the HTML format and published to my target
-directory on my remote server through RSYNC via TRAMP. A sitemap is
-automatically generated, which comes in handy with the online sitemap that is
-available through the navigation bar.
-#+NAME: org-proj-config-html
-#+BEGIN_SRC emacs-lisp
-("config-website-org"
- :base-directory ,phundrak//projects-config-source
- :base-extension "org"
- :publishing-directory ,phundrak//projects-config-target
- :recursive ,phundrak//projects-config-recursive
- :language ,phundrak//projects-config-language
- :publishing-function org-html-publish-to-html
- :headline-levels 5
- :auto-sitemap t
- :auto-preamble t)
-#+END_SRC
-
-We also have the component for all the static files needed to run the website
-(mostly images tbh).
-#+NAME: org-proj-config-static
-#+BEGIN_SRC emacs-lisp
-("config-website-static"
- :base-directory ,phundrak//projects-config-source
- :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub\\|md"
- :publishing-directory ,phundrak//projects-config-target
- :recursive ,phundrak//projects-config-recursive
- :language ,phundrak//projects-config-language
- :publishing-function org-publish-attachment)
-#+END_SRC
-
-The project is then defined like so:
-#+NAME: org-proj-config
-#+BEGIN_SRC emacs-lisp
-("config-website"
- :components ("config-website-org"
-              "config-website-static"))
-#+END_SRC
-
-**** Conlanging website
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Projects-Linguistics-websitey4k5fl6184j0
-:END:
-#+begin_info
-/Conlangs/, or /constructed languages/, are artificial languages created
-by individuals or by groups of individuals, unlike natural languages
-which evolve and appear naturally from other languages.
-#+end_info
-
-My conlanging website is made out of three projects. As for the
-previous project, let’s declare the common values for these.
-#+NAME: org-proj-lang-setup
-#+BEGIN_SRC emacs-lisp
-(defvar phundrak//projects-conlanging-target
-  "/rsync:Tilo:~/www/phundrak.com/conlang"
-  "Points to where exported files for langue.phundrak.com should be put.")
-(defvar phundrak//projects-conlanging-source
-  "~/Documents/conlanging/content/"
-  "Points to where the sources for langue.phundrak.com are.")
-(defvar phundrak//projects-conlanging-language
-  "en"
-  "Language of langue.phundrak.com.")
-(defvar phundrak//projects-conlanging-recursive
-  t
-  "Defines whether subdirectories should be parsed for langue.phundrak.com.")
-#+END_SRC
-
-The first component is the one generating the HTML files from the org files.
-#+NAME: org-proj-lang-html
-#+BEGIN_SRC emacs-lisp
-("conlang-phundrak-com-org"
- :base-directory ,phundrak//projects-conlanging-source
- :base-extension "org"
- :exclude ,(rx (* print)
-               (or "CONTRIB"
-                   "README"
-                   "header"
-                   "temp"
-                   "private"
-                   "svg-ink")
-               (* print))
- :publishing-directory ,phundrak//projects-conlanging-target
- :recursive ,phundrak//projects-conlanging-recursive
- :language ,phundrak//projects-conlanging-language
- :publishing-function org-html-publish-to-html
- :headline-levels 5
- :auto-sitemap t
- :auto-preamble t)
-#+END_SRC
-
-We also have the component for the LaTeX and PDF part of the website:
-#+NAME: org-proj-lang-pdf
-#+BEGIN_SRC emacs-lisp
-("conlang-phundrak-com-pdf"
- :base-directory ,phundrak//projects-conlanging-source
- :base-extension "org"
- :exclude ,(rx (* print)
-               (or "CONTRIB"
-                   "README"
-                   "header"
-                   "temp"
-                   "index"
-                   "sitemap"
-                   "private"
-                   "svg-ink")
-               (* print))
- :publishing-directory ,phundrak//projects-conlanging-target
- :recursive ,phundrak//projects-conlanging-recursive
- :language ,phundrak//projects-conlanging-language
- :publishing-function org-latex-publish-to-pdf
- :headline-levels 5
- :auto-preamble t)
-#+END_SRC
-
-And lastly, we have the component for all the static files needed to run the
-website:
-#+NAME: org-proj-lang-static
-#+BEGIN_SRC emacs-lisp
-("conlang-phundrak-com-static"
- :base-directory ,phundrak//projects-conlanging-source
- :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub"
- :publishing-directory ,phundrak//projects-conlanging-target
- :recursive ,phundrak//projects-conlanging-recursive
- :language ,phundrak//projects-conlanging-language
- :publishing-function org-publish-attachment)
-#+END_SRC
-
-The project is then defined like so:
-#+NAME: org-proj-lang
-#+BEGIN_SRC emacs-lisp
-("conlang-phundrak-com"
- :components ("conlang-phundrak-com-org"
-              "conlang-phundrak-com-static"
-              "conlang-phundrak-com-pdf"))
-#+END_SRC
-
-This project leaves a lot of junk files here and there. This is why I
-have this command to remove them easily.
-#+begin_src emacs-lisp
-(defun phundrak/clean-conlanging-directory ()
-  "Clean my conlanging directory from junk files."
-  (interactive)
-  (let ((files (directory-files-recursively phundrak//projects-conlanging-source
-                                            (rx (* print)
-                                                "."
-                                                (or "glo"
-                                                    "html"
-                                                    "ist"
-                                                    "tex"
-                                                    "pdf")))))
-    (mapc (lambda (file) (delete-file file))
-       (cl-remove-if (lambda (str)
-                       (string-match-p (regexp-quote "headers.tex") str))
-                     files))))
-#+end_src
-
 *** Org-ref and Bibtex configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-org-ref-1h586cd085j0
-:END:
 #+begin_src emacs-lisp
 (use-package reftex
   :commands turn-on-reftex
-  :init (setq reftex-default-bibliography "~/org/bibliography/references.bib"
+  :init (setq reftex-default-bibliography "~/Dropbox/Org/bibliography/references.bib"
               reftex-plug-into-AUCTeX     t))
 #+end_src
 
@@ -2092,9 +2004,9 @@ have this command to remove them easily.
   (add-hook 'org-mode-hook (lambda () (require 'org-ref)))
   :config
   (setq bibtex-completion-pdf-field    "file"
-        bibtex-completion-notes-path   "~/org/bibliography/notes/"
-        bibtex-completion-bibliography "~/org/bibliography/references.bib"
-        bibtex-completion-library-path "~/org/bibliography/bibtex-pdfs/"
+        bibtex-completion-notes-path   "~/Dropbox/Org/bibliography/notes/"
+        bibtex-completion-bibliography "~/Dropbox/Org/bibliography/references.bib"
+        bibtex-completion-library-path "~/Dropbox/Org/bibliography/bibtex-pdfs/"
         bibtex-completion-pdf-symbol   "⌘"
         bibtex-completion-notes-symbol "✎")
   :general
@@ -3277,37 +3189,9 @@ in my Emacs build, and these keybinds *will not* be tangled.
  "C-u"       #'xwidget-webkit-scroll-down)
 #+end_src
 
-*** Wttr.in
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Wttr-inpak1fl6184j0
-:END:
-#+begin_src emacs-lisp
-(use-package wttrin
-  :defer t
-  :straight (wttrin :build t
-                    :local-repo "~/fromGIT/emacs-packages/emacs-wttrin"
-                    :type git)
-                    ;; :host github
-                    ;; :repo "Phundrak/emacs-wttrin"
-  :config
-  (setq wttrin-default-cities '("Aubervilliers" "Paris" "Lyon" "Nonières" "Saint Agrève")
-        wttrin-use-metric t))
-#+end_src
-
-**** TODO Derive a major mode for wttrin                        :noexport:
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Wttr-in-Derive-a-major-mode-for-wttrinkrl1fl6184j0
-:END:
-To handle keybindings correctly, a major mode for wttrin could be
-derived from ~fundamental-mode~ and get an associated keymap.
-
 ** Editing
 *** Easily Inserting Pairs
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editinggnu1fl6184j0
-:END:
-First, I’ll define some keybindings for easily inserting pairs when
-editing text.
+First, I’ll define some keybindings for easily inserting pairs when editing text.
 #+begin_src emacs-lisp
 (general-define-key
  :states 'visual
@@ -3320,13 +3204,7 @@ editing text.
 #+end_src
 
 *** Atomic Chrome
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Atomic-Chrome-2w5bt8y029j0
-:END:
-Why write in your browser when you could write with Emacs? Despite its
-name, this package isn’t only geared towards Chrome/Chromium-based
-browsers but also towards Firefox since its 2.0 version. I find it a
-bit unfortunate Chrome’s name stuck in the package’s name though.
+Why write in your browser when you could write with Emacs? Despite its name, this package isn’t only geared towards Chrome/Chromium-based browsers but also towards Firefox since its 2.0 version. I find it a bit unfortunate Chrome’s name stuck in the package’s name though.
 #+begin_src emacs-lisp
 (use-package atomic-chrome
   :straight (:build t)
@@ -3341,13 +3219,7 @@ bit unfortunate Chrome’s name stuck in the package’s name though.
 #+end_src
 
 *** Editorconfig
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Editorconfig-txn4dtx0rbj0
-:END:
-Editorconfig is a unified way of passing to your text editor settings
-everyone working in a repo need to follow. ~.editorconfig~ files work
-for VSCode users, vim users, Atom users, Sublime users, and of course
-Emacs users.
+Editorconfig is a unified way of passing to your text editor settings everyone working in a repo need to follow. ~.editorconfig~ files work for VSCode users, vim users, Atom users, Sublime users, and of course Emacs users.
 #+begin_src emacs-lisp
 (use-package editorconfig
   :defer t
@@ -3358,11 +3230,7 @@ Emacs users.
 #+end_src
 
 *** Evil Nerd Commenter
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Evil-Nerd-Commenterd2w1fl6184j0
-:END:
-Emacs’ default commenting system is nice, but I don’t find it smart
-enough for me.
+Emacs’ default commenting system is nice, but I don’t find it smart enough for me.
 #+begin_src emacs-lisp
 (use-package evil-nerd-commenter
   :after evil
@@ -3370,13 +3238,7 @@ enough for me.
 #+end_src
 
 *** Iedit
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Iedit-eb98g8q0p8j0
-:END:
-Iedit is a powerful text editing tool that can be used to refactor
-code through the edition of multiple regions at once, be it in a
-region or in a whole buffer. Since I’m using evil, I’ll also use a
-compatibility package that adds states for iedit.
+Iedit is a powerful text editing tool that can be used to refactor code through the edition of multiple regions at once, be it in a region or in a whole buffer. Since I’m using evil, I’ll also use a compatibility package that adds states for iedit.
 #+begin_src emacs-lisp
 (use-package evil-iedit-state
   :defer t
@@ -3406,19 +3268,7 @@ compatibility package that adds states for iedit.
 #+end_src
 
 *** Parinfer
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Parinfermxy1fl6184j0
-:END:
-Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not
-a ~parinfer~ mode for ~rust-mode~, but a mode for ~parinfer-rust~. ~parinfer~
-was a project for handling parenthesis and other double markers in a
-much more intuitive way when writing Lisp code. However, it is now out
-of date (last commit was on January 2nd, 2019) and the repository has
-since been archived. New implementations then appeared, one of them is
-[[https://github.com/eraserhd/parinfer-rust][~parinfer-rust~]], obviously written in Rust, around which
-~parinfer-rust-mode~ is built. Enabling ~parinfer-rust-mode~ should also
-automatically disable ~smartparens-mode~ in order to avoid conflicting
-behavior.
+Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~parinfer~ mode for ~rust-mode~, but a mode for ~parinfer-rust~. ~parinfer~ was a project for handling parenthesis and other double markers in a much more intuitive way when writing Lisp code. However, it is now out of date (last commit was on January 2nd, 2019) and the repository has since been archived. New implementations then appeared, one of them is [[https://github.com/eraserhd/parinfer-rust][~parinfer-rust~]], obviously written in Rust, around which ~parinfer-rust-mode~ is built. Enabling ~parinfer-rust-mode~ should also automatically disable ~smartparens-mode~ in order to avoid conflicting behavior.
 #+begin_src emacs-lisp
 (use-package parinfer-rust-mode
   :defer t
@@ -3439,14 +3289,7 @@ behavior.
 #+end_src
 
 *** Smartparens
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Smartparens-zve93mk0k4j0
-:END:
-~smartparens~ is a package similar to ~parinfer~, but while the latter is
-more specialized for Lisp dialects, ~smartparens~ works better with
-other programming languages that still uses parenthesis, but not as
-much as Lisp dialects; think for example C, C++, Rust, Javascript, and
-so on.
+~smartparens~ is a package similar to ~parinfer~, but while the latter is more specialized for Lisp dialects, ~smartparens~ works better with other programming languages that still uses parenthesis, but not as much as Lisp dialects; think for example C, C++, Rust, Javascript, and so on.
 #+begin_src emacs-lisp
 (use-package smartparens
   :defer t
@@ -3455,12 +3298,7 @@ so on.
 #+end_src
 
 *** ~string-edit~
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-string-editae02fl6184j0
-:END:
-~string-edit~ is a cool package that allows the user to write naturally
-a string and get it automatically escaped for you. No more manually
-escaping your strings!
+~string-edit~ is a cool package that allows the user to write naturally a string and get it automatically escaped for you. No more manually escaping your strings!
 #+begin_src emacs-lisp
 (use-package string-edit-at-point
   :defer t
@@ -3468,12 +3306,7 @@ escaping your strings!
 #+end_src
 
 *** Writeroom
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Editing-Writeroomxt12fl6184j0
-:END:
-On the other hand, ~writeroom~ allows the user to enter a
-distraction-free mode of Emacs, and I like that! But the default width
-is a bit too small for me, and I prefer not to go fullscren.
+On the other hand, ~writeroom~ allows the user to enter a distraction-free mode of Emacs, and I like that! But the default width is a bit too small for me, and I prefer not to go fullscren.
 #+begin_src emacs-lisp
 (use-package writeroom-mode
   :defer t
@@ -3505,22 +3338,12 @@ is a bit too small for me, and I prefer not to go fullscren.
 #+end_src
 
 ** Emacs built-ins
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-insr832fl6184j0
-:END:
 *** Dired
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Diredao42fl6184j0
-:END:
-Dired is Emacs’ built-in file manager. It’s really great, and replaces
-any graphical file manager for me most of the time because:
+Dired is Emacs’ built-in file manager. It’s really great, and replaces any graphical file manager for me most of the time because:
 - I am not limited to /x/ tabs or panes
 - All actions can be done with keybindings
-- I get a consistent behavior between Dired and Emacs, since it’s the
-  same thing.
-I used to have an extensive configuration for Dired with a couple of
-additional packages to make it more usable. Dirvish rendered that
-obsolete!
+- I get a consistent behavior between Dired and Emacs, since it’s the same thing.
+I used to have an extensive configuration for Dired with a couple of additional packages to make it more usable. Dirvish rendered that obsolete!
 #+begin_src emacs-lisp
 (use-package dirvish
   :straight (:build t)
@@ -3650,15 +3473,7 @@ happening.
 #+end_src
 
 *** Compilation mode
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Compilation-mode-7nh817m0t8j0
-:END:
-After reading about a blog article, I found out it is possible to run
-quite a few things through ~compilation-mode~, so why not? First, let’s
-redefine some keybinds for this mode. I’ll also define a general
-keybind in order to re-run my programs from other buffers than the
-~compilation-mode~ buffer. I also want to follow the output of the
-compilation buffer, as well as enable some syntax highlighting.
+After reading about a blog article, I found out it is possible to run quite a few things through ~compilation-mode~, so why not? First, let’s redefine some keybinds for this mode. I’ll also define a general keybind in order to re-run my programs from other buffers than the ~compilation-mode~ buffer. I also want to follow the output of the compilation buffer, as well as enable some syntax highlighting.
 #+begin_src emacs-lisp
 (use-package compile
   :defer t
@@ -3683,14 +3498,9 @@ compilation buffer, as well as enable some syntax highlighting.
 #+end_src
 
 *** Eshell
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell0662fl6184j0
-:END:
 #+include: img/emacs-eshell.svg export html
 
-Eshell is a built-in shell available from Emacs which I use almost as
-often as fish. Some adjustments are necessary to make it fit my taste
-though.
+Eshell is a built-in shell available from Emacs which I use almost as often as fish. Some adjustments are necessary to make it fit my taste though.
 #+begin_src emacs-lisp
 (use-package eshell
   :defer t
@@ -3926,11 +3736,7 @@ that.
 #+end_src
 
 *** Eww
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eww-m1343rs0t8j0
-:END:
-Since Emacs 29, it is possible to automatically rename ~eww~ buffers to
-a more human-readable name, see [[https://protesilaos.com/codelog/2021-10-15-emacs-29-eww-rename-buffers/][Prot’s blog]] post on the matter.
+Since Emacs 29, it is possible to automatically rename ~eww~ buffers to a more human-readable name, see [[https://protesilaos.com/codelog/2021-10-15-emacs-29-eww-rename-buffers/][Prot’s blog]] post on the matter.
 #+begin_src emacs-lisp
 (use-package eww
   :defer t
@@ -3940,20 +3746,12 @@ a more human-readable name, see [[https://protesilaos.com/codelog/2021-10-15-ema
 #+end_src
 
 *** Image-mode
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Image-mode-dchdl251jdj0
-:END:
-I won’t modify much for ~image-mode~ (the mode used to display images)
-aside from Emacs’ ability to use external converters to display some
-images it wouldn’t be able to handle otherwise.
+I won’t modify much for ~image-mode~ (the mode used to display images) aside from Emacs’ ability to use external converters to display some images it wouldn’t be able to handle otherwise.
 #+begin_src emacs-lisp
 (setq image-use-external-converter t)
 #+end_src
 
 *** Info
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Info-r7x90j20c5j0
-:END:
 Let’s define some more intuitive keybinds for ~info-mode~.
 #+begin_src emacs-lisp
 (use-package info
@@ -3977,13 +3775,7 @@ Let’s define some more intuitive keybinds for ~info-mode~.
 #+end_src
 
 *** Tramp
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Tramplqd2fl6184j0
-:END:
-Tramp is an Emacs built-in package that allows the user to connect to
-various hosts using various protocols, such as ~ssh~ and
-~rsync~. However, I have some use-case for Tramp which are not
-supported natively. I will describe them here.
+Tramp is an Emacs built-in package that allows the user to connect to various hosts using various protocols, such as ~ssh~ and ~rsync~. However, I have some use-case for Tramp which are not supported natively. I will describe them here.
 #+begin_src emacs-lisp
 (use-package tramp
   :straight (tramp :type built-in :build t)
@@ -4026,19 +3818,8 @@ I’ll also create a fuction for connecting to this new Tramp protocol:
 #+end_src
 
 ** Making my life easier
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Making-my-life-easier2kz4fl6184j0
-:END:
 *** Bufler
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Making-my-life-easier-Buflerw215fl6184j0
-:END:
-Bufler is a package that organizes and lists buffers in a much better
-way than how they are usually sorted. You can easily and quickly find
-buffers by their group, not only by their name, and THIS is great
-news! Also, no ~helm~ please! And for some reasons the keybindings are
-borked by default, so let’s redefine them, and let’s also rebind ~SPC~
-to ~p~ since it would conflict with my main ~general~ prefix.
+Bufler is a package that organizes and lists buffers in a much better way than how they are usually sorted. You can easily and quickly find buffers by their group, not only by their name, and THIS is great news! Also, no ~helm~ please! And for some reasons the keybindings are borked by default, so let’s redefine them, and let’s also rebind ~SPC~ to ~p~ since it would conflict with my main ~general~ prefix.
 #+begin_src emacs-lisp
 (use-package bufler
   :straight (bufler :build t
@@ -4060,11 +3841,7 @@ to ~p~ since it would conflict with my main ~general~ prefix.
 #+end_src
 
 *** Helpful
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Making-my-life-easier-Helpfullh25fl6184j0
-:END:
-As the name tells, ~helpful~ is a really helpful package which greatly
-enhances a couple of built-in functions from Emacs, namely:
+As the name tells, ~helpful~ is a really helpful package which greatly enhances a couple of built-in functions from Emacs, namely:
 | Vanilla Emacs Function | Helpful Function | Comment                                       |
 |------------------------+------------------+-----------------------------------------------|
 | ~describe-function~      | ~helpful-callable~ | Only interactive functions                    |
@@ -4089,9 +3866,6 @@ enhances a couple of built-in functions from Emacs, namely:
 #+end_src
 
 ** LaTeX
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-LaTeX-qfu4g180gbj0
-:END:
 #+begin_src emacs-lisp :noweb yes
 (use-package auctex
   :defer t
@@ -4290,20 +4064,9 @@ From Doom Emacs’ configuration:
 #+end_src
 
 ** Programming
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages6et5fl6184j0
-:END:
 *** Tools
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-Tools-w3q5rsg0k4j0
-:END:
 **** Treesitter
-:PROPERTIES:
-:CUSTOM_ID: PackagesConfigurationProgrammingToolsTreesitter-pbbjc4a05mj0
-:END:
-[[https://emacs-tree-sitter.github.io/][Tree sitter]] is a package for emacs based on [[https://tree-sitter.github.io/tree-sitter/][~tree-sitter~]] which
-provides a very fast and flexible way of performing code-highlighting
-in Emacs.
+[[https://emacs-tree-sitter.github.io/][Tree sitter]] is a package for emacs based on [[https://tree-sitter.github.io/tree-sitter/][~tree-sitter~]] which provides a very fast and flexible way of performing code-highlighting in Emacs.
 #+begin_src emacs-lisp
 (use-package tree-sitter
   :defer t
@@ -4316,12 +4079,7 @@ in Emacs.
 #+end_src
 
 **** Appwrite
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-Tools-Appwrite-c1e4fh51mij0
-:END:
-[[https://appwrite.io][Appwrite]] is an open-source and self-hostable alternative to Firebase.
-I am currently working on a server SDK for Appwrite in Emacs, so here
-it is.
+[[https://appwrite.io][Appwrite]] is an open-source and self-hostable alternative to Firebase. I am currently working on a server SDK for Appwrite in Emacs, so here it is.
 #+begin_src emacs-lisp
 (use-package appwrite
   :defer t
@@ -4335,14 +4093,7 @@ it is.
 #+end_src
 
 **** Databases
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-Tools-Databases-73nhsqt09ij0
-:END:
-A really cool tool in Emacs for manipulating databases is ~emacsql~.
-It’s able to manipulate Sqlite databases by default, but it’s also
-possible to manipulate MariaDB and PostgreSQL databases by installing
-additional packages. For now, I just need Sqlite and PostgreSQL
-interfaces, so let’s install the relevant packages.
+A really cool tool in Emacs for manipulating databases is ~emacsql~. It’s able to manipulate Sqlite databases by default, but it’s also possible to manipulate MariaDB and PostgreSQL databases by installing additional packages. For now, I just need Sqlite and PostgreSQL interfaces, so let’s install the relevant packages.
 #+begin_src emacs-lisp
 (use-package emacsql-psql
   :defer t
@@ -4357,9 +4108,6 @@ interfaces, so let’s install the relevant packages.
 #+end_src
 
 **** Flycheck
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-Flycheckb446fl6184j0
-:END:
 #+begin_src emacs-lisp
 (use-package flycheck
   :straight (:build t)
@@ -4405,11 +4153,7 @@ interfaces, so let’s install the relevant packages.
 #+end_src
 
 **** Langtool
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-Tools-Langtool-sjr1oox0y9j0
-:END:
-LanguageTool is a great tool for catching typos and grammatical errors
-in quite a few languages.
+LanguageTool is a great tool for catching typos and grammatical errors in quite a few languages.
 #+begin_src emacs-lisp
 (use-package langtool
   :defer t
@@ -4451,9 +4195,6 @@ in quite a few languages.
 #+end_src
 
 **** Spellcheck
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-Tools-Spellcheck-wos8d0y0y9j0
-:END:
 #+begin_src emacs-lisp
 (use-package ispell
   :if (executable-find "aspell")
@@ -4532,12 +4273,7 @@ Spell Commands^^           Add To Dictionary^^              Other
 #+end_src
 
 **** LSP-Mode
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-Tools-LSP-Mode-g4v5rsg0k4j0
-:END:
-[[https://emacs-lsp.github.io/lsp-mode/][~lsp-mode~]] is a mode for Emacs which implements the [[https://github.com/Microsoft/language-server-protocol/][Language Server
-Protocol]] and offers Emacs an IDE-like experience. In short, it’s
-awesome!
+[[https://emacs-lsp.github.io/lsp-mode/][~lsp-mode~]] is a mode for Emacs which implements the [[https://github.com/Microsoft/language-server-protocol/][Language Server Protocol]] and offers Emacs an IDE-like experience. In short, it’s awesome!
 #+begin_src emacs-lisp
 (use-package lsp-mode
   :defer t
@@ -4693,17 +4429,9 @@ And let’s enable some intergration with ~ivy~.
 #+end_src
 
 *** DSLs
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLsbwu5fl6184j0
-:END:
-DSLs, or /Domain Specific Languages/, are languages dedicated to some
-very tasks, such as configuration languages or non-general programming
-such as SQL.
+DSLs, or /Domain Specific Languages/, are languages dedicated to some very tasks, such as configuration languages or non-general programming such as SQL.
 
 **** Makefiles
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-DSLs-Makefiles-2855jdn06jj0
-:END:
 #+begin_src emacs-lisp
 (defun my/local-tab-indent ()
   (setq-local indent-tabs-mode 1))
@@ -4712,16 +4440,9 @@ such as SQL.
 #+end_src
 
 **** Caddy
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Caddy0fw5fl6184j0
-:END:
-[[https://caddyserver.com/][Caddy]] (or /Caddyserver/) is a web server akin to Nginx or Apache which I
-find much easier to configure that the latter two, plus it has
-built-in support for automatically generating SSL certificates with
-Letsencrypt! Automatic HTTPS, what more do you want?
+[[https://caddyserver.com/][Caddy]] (or /Caddyserver/) is a web server akin to Nginx or Apache which I find much easier to configure that the latter two, plus it has built-in support for automatically generating SSL certificates with Letsencrypt! Automatic HTTPS, what more do you want?
 
-All that is nice and all, but Emacs doesn’t support the syntax of
-Caddy files natively, so let’s install ~caddyfile-mode~:
+All that is nice and all, but Emacs doesn’t support the syntax of Caddy files natively, so let’s install ~caddyfile-mode~:
 #+begin_src emacs-lisp
 (use-package caddyfile-mode
   :defer t
@@ -4731,13 +4452,7 @@ Caddy files natively, so let’s install ~caddyfile-mode~:
 #+end_src
 
 **** CMake
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-CMake-vpqkiyp0m5j0
-:END:
-CMake is one of the standard tools for indicating how a project should
-be built. It is not as standard as some other tools such as automake,
-autoconfig, and the likes, but still pretty standard. CMake however
-doesn’t have a major mode available by default, so let’s provide one.
+CMake is one of the standard tools for indicating how a project should be built. It is not as standard as some other tools such as automake, autoconfig, and the likes, but still pretty standard. CMake however doesn’t have a major mode available by default, so let’s provide one.
 #+begin_src emacs-lisp
 (use-package cmake-mode
   :defer t
@@ -4772,9 +4487,6 @@ And finally, let’s enable some Eldoc integration for CMake.
 #+end_src
 
 **** CSV
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-CSV-z1vh3rt0uaj0
-:END:
 #+begin_src emacs-lisp
 (use-package csv-mode
   :straight (:build t)
@@ -4801,16 +4513,7 @@ And finally, let’s enable some Eldoc integration for CMake.
 #+end_src
 
 **** Dotenv
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-DSLs-Dotenv-b7kb2gr0kij0
-:END:
-It is not rare to encounter a dotenv file, that is, a file with either
-the ~.env~ extension or simply called ~.env~. They contain environment
-variables for projects which might rely on values you do not want to
-upload to a public git repository and such. While their syntax is
-similar to shell files, they’re not exactly shell files either since
-there’s rarely any script inside running. So, let’s install a simple
-package which will dumb down a lot ~sh-mode~ for these dotenv files.
+It is not rare to encounter a dotenv file, that is, a file with either the ~.env~ extension or simply called ~.env~. They contain environment variables for projects which might rely on values you do not want to upload to a public git repository and such. While their syntax is similar to shell files, they’re not exactly shell files either since there’s rarely any script inside running. So, let’s install a simple package which will dumb down a lot ~sh-mode~ for these dotenv files.
 #+begin_src emacs-lisp
 (use-package dotenv-mode
   :defer t
@@ -4818,11 +4521,7 @@ package which will dumb down a lot ~sh-mode~ for these dotenv files.
 #+end_src
 
 **** Gnuplot
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Gnuplot8zx5fl6184j0
-:END:
-This package is a front-end and major mode for the programming
-language [[http://www.gnuplot.info/][Gnuplot]]. Let’s make some beautiful graphs, shall we?
+This package is a front-end and major mode for the programming language [[http://www.gnuplot.info/][Gnuplot]]. Let’s make some beautiful graphs, shall we?
 #+begin_src emacs-lisp
 (use-package gnuplot
   :straight (:build t)
@@ -4830,11 +4529,7 @@ language [[http://www.gnuplot.info/][Gnuplot]]. Let’s make some beautiful grap
 #+end_src
 
 **** Graphviz
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Graphviz-zifi28c1e8j0
-:END:
-[[https://graphviz.org/][Graphviz]], often known with ~dot~, allows to programatically create
-visual graphs and networks.
+[[https://graphviz.org/][Graphviz]], often known with ~dot~, allows to programatically create visual graphs and networks.
 #+begin_src emacs-lisp
 (use-package graphviz-dot-mode
   :defer t
@@ -4866,13 +4561,7 @@ visual graphs and networks.
 #+end_src
 
 **** Markdown
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Markdown-7sljsrb1y8j0
-:END:
-Yes, I love org-mode and I largely prefer to use it instead of
-Markdown due to its far superior power and abilities. But still,
-sometimes I need to use Markdown because not everyone use org-mode,
-unfortunately.
+Yes, I love org-mode and I largely prefer to use it instead of Markdown due to its far superior power and abilities. But still, sometimes I need to use Markdown because not everyone use org-mode, unfortunately.
 #+begin_src emacs-lisp
 (use-package markdown-mode
   :defer t
@@ -5049,13 +4738,7 @@ Markdown.
 #+end_src
 
 **** Nginx
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Nginxjiz5fl6184j0
-:END:
-Nginx is another webserver, older and more mature than Caddy. A couple
-of packages are required in order to be able to properly work with
-Nginx configuration files. First, we need the correct mode for editing
-Nginx configuration files.
+Nginx is another webserver, older and more mature than Caddy. A couple of packages are required in order to be able to properly work with Nginx configuration files. First, we need the correct mode for editing Nginx configuration files.
 #+begin_src emacs-lisp
 (use-package nginx-mode
   :straight (:build t)
@@ -5077,12 +4760,7 @@ Nginx syntax.
 #+end_src
 
 **** PKGBUILD
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-PKGBUILD-ll37pjt0m9j0
-:END:
-As I am an ArchLinux user, I sometimes have to interact with PKGBUILD
-files, both from the AUR when I want to install something from there
-or some I write myself.
+As I am an ArchLinux user, I sometimes have to interact with PKGBUILD files, both from the AUR when I want to install something from there or some I write myself.
 #+begin_src emacs-lisp
 (use-package pkgbuild-mode
   :straight (:build t)
@@ -5100,9 +4778,6 @@ or some I write myself.
 #+end_src
 
 **** PlantUML
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-PlantUML-9zo88og099j0
-:END:
 #+begin_src emacs-lisp
 (use-package plantuml-mode
   :defer t
@@ -5125,11 +4800,7 @@ or some I write myself.
 #+end_src
 
 **** Shells
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Shellsn116fl6184j0
-:END:
-Aside from Eshell, my main shell on my machine is fish (see my [[file:fish.org][fish
-config]]), therefore I need a mode for it.
+Aside from Eshell, my main shell on my machine is fish (see my [[file:fish.org][fish config]]), therefore I need a mode for it.
 #+begin_src emacs-lisp
 (use-package fish-mode
   :straight (:build t)
@@ -5145,9 +4816,6 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 **** Solidity
-:PROPERTIES:
-:CUSTOM_ID: PackagesConfigurationProgrammingDSLsSolidity-xhjjc4a05mj0
-:END:
 #+begin_src emacs-lisp
 (use-package solidity-mode
   :defer t
@@ -5157,9 +4825,6 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 **** SSH Config files
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-SSH-Config-files-wt9j1c909cj0
-:END:
 #+begin_src emacs-lisp
 (use-package ssh-config-mode
   :defer t
@@ -5167,9 +4832,6 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 **** Systemd
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Systemd-3a1dt090mdj0
-:END:
 #+begin_src emacs-lisp
 (use-package systemd
   :defer t
@@ -5182,9 +4844,6 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 **** Toml
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Toml-txu8xvk0k4j0
-:END:
 #+begin_src emacs-lisp
 (use-package toml-mode
   :straight (:build t)
@@ -5193,9 +4852,6 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 **** Yaml
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-DSLs-Yamlsk26fl6184j0
-:END:
 #+begin_src emacs-lisp
 (use-package yaml-mode
   :defer t
@@ -5205,17 +4861,8 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+end_src
 
 *** General Programming Languages
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languageszn56fl6184j0
-:END:
 **** C/C++
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-C-C-2nfcmoz0i5j0
-:END:
-I know, I know, C and C++ no longer are closely related languages,
-each one of them went their own way and learning C won’t make you a
-good C++ programmer, neither will the other way around. But, They are
-still somewhat related, and Emacs thinks so too.
+I know, I know, C and C++ no longer are closely related languages, each one of them went their own way and learning C won’t make you a good C++ programmer, neither will the other way around. But, They are still somewhat related, and Emacs thinks so too.
 #+begin_src emacs-lisp
 (use-package cc-mode
   :straight (:type built-in)
@@ -5259,9 +4906,6 @@ update its fontlock.
 #+end_src
 
 **** CommonLisp
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-CommonLisp-gc2a7s31q5j0
-:END:
 In Lisp buffers, let’s enable ~parinfer-rust-mode~.
 #+begin_src emacs-lisp
 (use-package lisp-mode
@@ -5305,9 +4949,6 @@ configuration for StumpWM]].
 #+end_src
 
 **** Dart
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Dart-xkr3z8j0m6j0
-:END:
 #+begin_src emacs-lisp
 (use-package dart-mode
   :straight (:build t)
@@ -5323,11 +4964,7 @@ configuration for StumpWM]].
 #+end_src
 
 **** EmacsLisp
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-EmacsLispo876fl6184j0
-:END:
-This package displays the function’s arglist or variable’s docstring
-in the echo area at the bottom of the frame. Quite useful indeed.
+This package displays the function’s arglist or variable’s docstring in the echo area at the bottom of the frame. Quite useful indeed.
 #+begin_src emacs-lisp
 (use-package eldoc
   :defer t
@@ -5425,12 +5062,7 @@ work with and it has a lot more features than Cask.
 #+end_src
 
 **** Python
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Python-7mwd2yq0z6j0
-:END:
-First, we need to set up the main Python mode. With this, we’ll also
-add Python to the list of LSP languages and to the list of languages
-org-babel supports.
+First, we need to set up the main Python mode. With this, we’ll also add Python to the list of LSP languages and to the list of languages org-babel supports.
 #+begin_src emacs-lisp
 (use-package python
   :defer t
@@ -5671,13 +5303,7 @@ Finally, I’m using [[https://github.com/microsoft/pyright][Pyright]] as my LSP
 #+end_src
 
 **** Rust
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Rust-n3jhh5h0k4j0
-:END:
-Rust is a general programming language, akin to C++ in some ways, but
-much more oriented towards safe code, and much better suited for web
-development. First, let’s install the most important package,
-~rustic~.
+Rust is a general programming language, akin to C++ in some ways, but much more oriented towards safe code, and much better suited for web development. First, let’s install the most important package, ~rustic~.
 #+begin_src emacs-lisp
 (use-package rustic
   :defer t
@@ -5729,12 +5355,7 @@ development. First, let’s install the most important package,
 #+end_src
 
 **** Web programming
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Web-programming-7ca40po085j0
-:END:
-[[https://emmet.io/][Emmet]] is a powerful templating engine that can generate through simple
-CSS-like expression some HTML so you don’t have to write everything by
-hand.
+[[https://emmet.io/][Emmet]] is a powerful templating engine that can generate through simple CSS-like expression some HTML so you don’t have to write everything by hand.
 #+begin_src emacs-lisp
 (use-package emmet-mode
   :straight (:build t)
@@ -5759,16 +5380,14 @@ hand.
     "ew" #'emmet-wrap-with-markup))
 #+end_src
 
-Impatient mode serves web buffers live over HTTP so you can see your
-editions as you type them.
+Impatient mode serves web buffers live over HTTP so you can see your editions as you type them.
 #+begin_src emacs-lisp
 (use-package impatient-mode
   :straight (:build t)
   :defer t)
 #+end_src
 
-Web mode is a sort of hybrid major mode that allows editing several
-languages in the same buffer, mainly HTML, CSS, and Javascript.
+Web mode is a sort of hybrid major mode that allows editing several languages in the same buffer, mainly HTML, CSS, and Javascript.
 #+begin_src emacs-lisp
 (use-package web-mode
   :defer t
@@ -5837,9 +5456,6 @@ Auto-completion for ~emmet-mode~, ~html-mode~, and ~web-mode~.
 #+end_src
 
 ***** CSS
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Web-programming-CSS-que40po085j0
-:END:
 Let’s customize a bit the built-in CSS mode.
 #+begin_src emacs-lisp
 (use-package css-mode
@@ -5858,8 +5474,7 @@ Let’s customize a bit the built-in CSS mode.
     "g" '(:ignore :wk "goto")))
 #+end_src
 
-SCSS is much nicer to use than pure CSS in my opinion, so let’s add a
-mode for that.
+SCSS is much nicer to use than pure CSS in my opinion, so let’s add a mode for that.
 #+begin_src emacs-lisp
 (use-package scss-mode
   :straight (:build t)
@@ -5884,8 +5499,7 @@ And let’s add some autocompletion for CSS.
             "gh" #'counsel-css)))
 #+end_src
 
-For some reason, although it is built-in, ~less-css-mode~ does not
-activate when I open ~.less~ files by default. Let’s fix that.
+For some reason, although it is built-in, ~less-css-mode~ does not activate when I open ~.less~ files by default. Let’s fix that.
 #+begin_src emacs-lisp
 (use-package less-css-mode
   :straight  (:type built-in)
@@ -5897,12 +5511,7 @@ activate when I open ~.less~ files by default. Let’s fix that.
 #+end_src
 
 ***** Javascript
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Web-programming-Javascript-8k5arup085j0
-:END:
-~javascript-mode~ is meh at best, while ~rjsx-mode~ (Real JSX) is much
-better: it supports both Javascript and ~.jsx~ files for React and
-Next.JS.
+~javascript-mode~ is meh at best, while ~rjsx-mode~ (Real JSX) is much better: it supports both Javascript and ~.jsx~ files for React and Next.JS.
 #+begin_src emacs-lisp
 (use-package rjsx-mode
   :defer t
@@ -5940,9 +5549,7 @@ Next.JS.
         js2-idle-timer-delay             0.15))
 #+end_src
 
-~js2-refactor~ is an amazing tool for refactoring Javascript code. I
-mean, [[https://www.youtube.com/watch?v=-7yMWD1wUu4][look at this]]! And the video is only from 2013 and it still
-receives some commits!
+~js2-refactor~ is an amazing tool for refactoring Javascript code. I mean, [[https://www.youtube.com/watch?v=-7yMWD1wUu4][look at this]]! And the video is only from 2013 and it still receives some commits!
 #+begin_src emacs-lisp
 (use-package js2-refactor
   :defer t
@@ -5952,8 +5559,7 @@ receives some commits!
   :hook (rjsx-mode . js2-refactor-mode))
 #+end_src
 
-Which Emacser prefers the command line over Emacs itself? I don’t.
-Let’s interact with NPM through Emacs then.
+Which Emacser prefers the command line over Emacs itself? I don’t. Let’s interact with NPM through Emacs then.
 #+begin_src emacs-lisp
 (use-package npm-transient
   :defer t
@@ -5980,9 +5586,6 @@ And finally, here is a formatter for Javascript.
 #+end_src
 
 ***** Typescript
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Web-programming-Typescript-o0e8nh30z9j0
-:END:
 Typescript is a safer alternative to Javascript. Let’s install its major mode then.
 #+begin_src emacs-lisp
 (use-package typescript-mode
@@ -6043,9 +5646,6 @@ Tide enabled interactivity with Typescript.
 #+end_src
 
 **** Zig
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Programming-languages-General-Programming-Languages-Zig-ud8a6q504cj0
-:END:
 [[https://ziglang.org/][Zig]] is to C kind of what Rust is to C++: a modern replacement without
 sacrificing performance. It is much safer than C while providing
 interop with it. Plus, its [[https://ziglang.org/documentation/master/std/][standard library]] is pretty complete.
@@ -6149,20 +5749,14 @@ Make sure to backup your old configuration!
 #+end_src
 
 ** Visual Configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configurationxr86fl6184j0
-:END:
 *** Dashboard
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Dashboardnba6fl6184j0
-:END:
 #+begin_src emacs-lisp
 (use-package dashboard
   :straight (:build t)
   :ensure t
   :after all-the-icons
   :config
-  (setq dashboard-banner-logo-title "Vugomars’s Emacs"
+  (setq dashboard-banner-logo-title "Vugomars’ Emacs"
         dashboard-startup-banner    'logo
         dashboard-center-content    t
         dashboard-show-shortcuts    t
@@ -6173,7 +5767,7 @@ Make sure to backup your old configuration!
         dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
   (setq dashboard-navigator-buttons
         `(((,(all-the-icons-faicon "language" :height 1.1 :v-adjust 0.0)
-            "Linguistics Website"
+            "Vugomars' Website"
             ""
             (lambda (&rest _) (browse-url "https://vugomars.com"))))
           ((,(all-the-icons-faicon "level-up" :height 1.1 :v-adjust 0.0)
@@ -6193,11 +5787,7 @@ Make sure to backup your old configuration!
 #+end_src
 
 *** Fringe
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Visual-Configuration-Fringe-glc9ch1195j0
-:END:
-It’s nice to know which lines were modified since the last commit in a
-file.
+It’s nice to know which lines were modified since the last commit in a file.
 #+begin_src emacs-lisp
 (use-package git-gutter-fringe
   :straight (:build t)
@@ -6208,29 +5798,18 @@ file.
 #+end_src
 
 *** Icons? Did someone say icons?
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Icons-Did-someone-say-iconsfye6fl6184j0
-:END:
 /*YES! ALL OF THEM!*/
 
 Ahem…
 
-The package ~all-the-icons~ allows us to use a wide variety of icons in
-Emacs for various purposes, wherever we want, and /THAT/ is *GREAT*! I’ll
-(ab)use this feature in my config, be warned! *NOTE*: The first time a
-configuration with ~all-the-icons~ loads on a machine, the needed fonts
-might not be available, so you’ll need to install them with the
-command ~M-x all-the-icons-install-fonts~.
+The package ~all-the-icons~ allows us to use a wide variety of icons in Emacs for various purposes, wherever we want, and /THAT/ is *GREAT*! I’ll (ab)use this feature in my config, be warned! *NOTE*: The first time a configuration with ~all-the-icons~ loads on a machine, the needed fonts might not be available, so you’ll need to install them with the command ~M-x all-the-icons-install-fonts~.
 #+begin_src emacs-lisp
 (use-package all-the-icons
   :defer t
   :straight t)
 #+end_src
 
-~prettify-symbols-mode~ is also a nifty feature of Emacs, and it is
-built-in! With that, I can replace strings of my choice by another
-character of my choice! First, let’s declare the general symbols that
-will be used everywhere.
+~prettify-symbols-mode~ is also a nifty feature of Emacs, and it is built-in! With that, I can replace strings of my choice by another character of my choice! First, let’s declare the general symbols that will be used everywhere.
 #+begin_src emacs-lisp
 (defun prog-mode-set-symbols-alist ()
   (setq prettify-symbols-alist '(("lambda"  . ?λ)
@@ -6241,8 +5820,7 @@ will be used everywhere.
 (add-hook 'prog-mode-hook #'prog-mode-set-symbols-alist)
 #+end_src
 
-We can now take care of the language-specific symbols. First, let’s
-declare some symbols for the Lisp languages.
+We can now take care of the language-specific symbols. First, let’s declare some symbols for the Lisp languages.
 #+begin_src emacs-lisp
 (setq-default lisp-prettify-symbols-alist '(("lambda"    . ?λ)
                                             ("defun"     . ?𝑓)
@@ -6260,20 +5838,13 @@ declare some symbols for the Lisp languages.
             #'lisp-mode-prettify))
 #+end_src
 
-Finally, similar to how ~org-appear~ behaves, let’s show the real string
-of our symbols when the cursor is on it.
+Finally, similar to how ~org-appear~ behaves, let’s show the real string of our symbols when the cursor is on it.
 #+begin_src emacs-lisp
 (setq prettify-symbols-unprettify-at-point t)
 #+end_src
 
 *** Ligatures
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Ligatures-2v50x451v8j0
-:END:
-The font I’m using (see
-§[[#Basic-configuration-Visual-Configuration-Fontsxfkjel6184j0]]) supports
-ligatures, but Emacs in GUI mode does not. And of course, there’s a
-package for that.
+The font I’m using (see §[[#Basic-configuration-Visual-Configuration-Fontsxfkjel6184j0]]) supports ligatures, but Emacs in GUI mode does not. And of course, there’s a package for that.
 #+begin_src emacs-lisp
 (use-package ligature
   :straight (ligature :type git
@@ -6306,9 +5877,6 @@ package for that.
 #+end_src
 
 *** Modeline
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Modelineavb6fl6184j0
-:END:
 The DoomEmacs modeline looks nice in my opinion, let’s use it.
 #+begin_src emacs-lisp
 (use-package doom-modeline
@@ -6323,21 +5891,9 @@ The DoomEmacs modeline looks nice in my opinion, let’s use it.
 #+end_src
 
 *** Pixel-perfect alignment of Markdown and org-mode tables
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Pixel-perfect-alignment-of-Markdown-and-org-mode-tables-u9rjl661bdj0
-:END:
-Usually, I have no issue with the alignment of the tables I write in
-org-mode and (more rarely) Markdown. However, there are occurences
-where I’ll use a character that does not exactly respect my monospace
-font, which messes with the alignment of the table (often when I do
-linguistics stuff). A solution to this is the package ~valign~. A little
-caveat though, as its name implies ~valign~ helps with vertical
-alignment. If some lines are too high, they won’t exactly fit. Unless?
-Unless ~valign-fancy-bar~ is set to ~t~.
+Usually, I have no issue with the alignment of the tables I write in org-mode and (more rarely) Markdown. However, there are occurences where I’ll use a character that does not exactly respect my monospace font, which messes with the alignment of the table (often when I do linguistics stuff). A solution to this is the package ~valign~. A little caveat though, as its name implies ~valign~ helps with vertical alignment. If some lines are too high, they won’t exactly fit. Unless? Unless ~valign-fancy-bar~ is set to ~t~.
 
-For now, I disabled the hook with org-mode and markdown-mode because
-it slows down opening these files quite a lot. I’ll re-enable the hook
-once it is fixed.
+For now, I disabled the hook with org-mode and markdown-mode because it slows down opening these files quite a lot. I’ll re-enable the hook once it is fixed.
 #+begin_src emacs-lisp
 (use-package valign
   :defer t
@@ -6348,11 +5904,7 @@ once it is fixed.
 #+end_src
 
 *** Secret mode
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Secret-mode-b2e9hp51v8j0
-:END:
-Sometimes, I want to hide the text displayed by Emacs but not lock
-altogether my computer. In this case, ~secret-mode~ comes in handy.
+Sometimes, I want to hide the text displayed by Emacs but not lock altogether my computer. In this case, ~secret-mode~ comes in handy.
 #+begin_src emacs-lisp
 (use-package secret-mode
   :defer t
@@ -6363,18 +5915,9 @@ altogether my computer. In this case, ~secret-mode~ comes in handy.
 #+end_src
 
 *** Solaire: Incandescent Emacs
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Solaire-Incandescent-Emacs-ah27z1q0obj0
-:END:
-A common issue when you have a lot of windows opened in Emacs is
-sometimes there’s just too much. Is the first window source code? Is
-the other one just an open email? Oh, let’s not forget the ~*Messages*~
-buffer open next to another source buffer.
+A common issue when you have a lot of windows opened in Emacs is sometimes there’s just too much. Is the first window source code? Is the other one just an open email? Oh, let’s not forget the ~*Messages*~ buffer open next to another source buffer.
 
-Solaire-mode applies a subtle but useful tweak to your current color
-scheme: the background of programming buffers is slightly lighter than
-the background of other buffers. (Or is it other buffers that have a
-slightly darker background? I’m not sure.)
+Solaire-mode applies a subtle but useful tweak to your current color scheme: the background of programming buffers is slightly lighter than the background of other buffers. (Or is it other buffers that have a slightly darker background? I’m not sure.)
 #+begin_src emacs-lisp
 (use-package solaire-mode
   :defer t
@@ -6383,13 +5926,7 @@ slightly darker background? I’m not sure.)
 #+end_src
 
 *** Theme
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Themeded6fl6184j0
-:END:
-You may have noticed I use the Nord theme pretty much everywhere on my
-computer, why not Emacs? In my opinion, its aurora variant is nicer
-than the default Nord theme since it is richer in colors --- just a
-personal preference.
+You may have noticed I use the Nord theme pretty much everywhere on my computer, why not Emacs? In my opinion, its aurora variant is nicer than the default Nord theme since it is richer in colors --- just a personal preference.
 #+begin_src emacs-lisp
 (use-package doom-themes
   :straight (:build t)
@@ -6398,11 +5935,7 @@ personal preference.
 #+end_src
 
 *** Rainbow Delimiters
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Rainbow-Delimiters3lg6fl6184j0
-:END:
-This makes Lisp especially more readable, but it’s also nice to have
-for any language that has delimiters like brackets too.
+This makes Lisp especially more readable, but it’s also nice to have for any language that has delimiters like brackets too.
 #+begin_src emacs-lisp
 (use-package rainbow-delimiters
   :straight (:build t)
@@ -6411,11 +5944,7 @@ for any language that has delimiters like brackets too.
 #+end_src
 
 *** Y’all want some more /COLORS/?
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Visual-Configuration-Y-all-want-some-more-COLORSs6i6fl6184j0
-:END:
-It is possible to make info buffers much more colorful (and imo easier
-to read) with this simple package:
+It is possible to make info buffers much more colorful (and imo easier to read) with this simple package:
 #+begin_src emacs-lisp
 (use-package info-colors
   :straight (:build t)
@@ -6425,30 +5954,8 @@ to read) with this simple package:
 #+end_src
 
 ** Misc
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc0sj6fl6184j0
-:END:
-*** ArchWiki pages
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-ArchWiki-pages-nha3jhq0r4j0
-:END:
-A small package I’ve written allows the user to view ArchLinux pages
-either in Emacs or in an external web browser. I prefer the defaults.
-#+begin_src emacs-lisp
-(use-package archwiki
-  :defer t
-  :straight (archwiki :build t
-                      :type git
-                      :repo "https://labs.phundrak.com/phundrak/archwiki.el"))
-#+end_src
-
 *** ~avy~
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-avyral6fl6184j0
-:END:
-~avy~ is a really convenient way of jumping around and performing
-actions on these selections, but I’ll need some configuration to make
-it bépo-compatible.
+~avy~ is a really convenient way of jumping around and performing actions on these selections, but I’ll need some configuration to make it bépo-compatible.
 #+begin_src emacs-lisp
 (use-package avy
   :defer t
@@ -6512,9 +6019,6 @@ it bépo-compatible.
 #+end_src
 
 *** Calc
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-Calc3vm6fl6184j0
-:END:
 Let’s give ~calc-mode~ some better defaults.
 #+begin_src emacs-lisp
 (setq calc-angle-mode    'rad
@@ -6522,9 +6026,6 @@ Let’s give ~calc-mode~ some better defaults.
 #+end_src
 
 *** Elcord
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-Elcord7eo6fl6184j0
-:END:
 What’s the point of using Emacs if you can’t tell everyone?
 #+begin_src emacs-lisp
 (use-package elcord
@@ -6540,11 +6041,7 @@ What’s the point of using Emacs if you can’t tell everyone?
 #+end_src
 
 *** ~ivy-quick-find-files.el~
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-ivy-quick-find-files-el2yp6fl6184j0
-:END:
-This package is a small utility package I’ve written in order to
-quickly find files across my filesystem.
+This package is a small utility package I’ve written in order to quickly find files across my filesystem.
 #+begin_src emacs-lisp
 (use-package ivy-quick-find-files
   :defer t
@@ -6560,12 +6057,7 @@ quickly find files across my filesystem.
 #+end_src
 
 *** Keycast
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-Keycast-nsqgl431t4j0
-:END:
-In case I am sharing my screen with people and I want to show which
-functions are called on my keystrokes since I don’t exactly use
-standard keybindings.
+In case I am sharing my screen with people and I want to show which functions are called on my keystrokes since I don’t exactly use standard keybindings.
 #+begin_src emacs-lisp
 (use-package keycast
   :defer t
@@ -6581,11 +6073,7 @@ standard keybindings.
 #+end_src
 
 *** Keyfreq
-:PROPERTIES:
-:CUSTOM_ID: PackagesConfigurationMiscKeyfreq-6ib0ovv0cnj0
-:END:
-Keyfreq is a package that records all the commands I call from Emacs
-and builds a heatmap out of it.
+Keyfreq is a package that records all the commands I call from Emacs and builds a heatmap out of it.
 #+begin_src emacs-lisp
 (use-package keyfreq
   :straight (:build t)
@@ -6601,11 +6089,7 @@ and builds a heatmap out of it.
 #+end_src
 
 *** SICP
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-SICP-96u6ukz0l4j0
-:END:
-Who would get interested in Emacs and not want to read the SICP?
-Moreover, inside Emacs?
+Who would get interested in Emacs and not want to read the SICP? Moreover, inside Emacs?
 #+begin_src emacs-lisp
 (use-package sicp
   :straight (:build t)
@@ -6613,37 +6097,14 @@ Moreover, inside Emacs?
 #+end_src
 
 *** Winum
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-Winumvir6fl6184j0
-:END:
-Winum allows Emacs to associate windows with a specific number and
-navigate through these windows by directly refering to their
-associated number! This allows for faster window configuration than
-just going to the frame above, then left, left, and up.
+Winum allows Emacs to associate windows with a specific number and navigate through these windows by directly refering to their associated number! This allows for faster window configuration than just going to the frame above, then left, left, and up.
 #+begin_src emacs-lisp
 (use-package winum
   :straight (:build t)
   :init (winum-mode))
 #+end_src
 
-*** Ytplay
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Misc-Ytplay-wxm9weq0r4j0
-:END:
-~ytplay~ is a small package I’ve written with which you can choose at
-which resolution to play a YouTube video in an external video player.
-#+begin_src emacs-lisp
-(use-package ytplay
-  :defer t
-  :straight (ytplay :build t
-                    :type git
-                    :repo "https://labs.phundrak.com/phundrak/ytplay.el"))
-#+end_src
-
 * Keybindings
-:PROPERTIES:
-:CUSTOM_ID: Keybindings3ps6fl6184j0
-:END:
 Undefining some stuff to make keybind prefixes work correctly.
 #+begin_src emacs-lisp
 (general-define-key
@@ -6701,9 +6162,6 @@ Undefining some stuff to make keybind prefixes work correctly.
 #+end_src
 
 ** Apps
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Apps-wz2ajup0baj0
-:END:
 Here are my apps keybinds. Each one of them is prefixed by ~a~.
 #+name: keybinds-apps
 | Key | Function         | Description |
@@ -6754,9 +6212,6 @@ My buffer-related keybinds are all prefixed by ~b~.
 | s   | switch-to-scratch-buffer           |             |
 
 ** Errors
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Email-gv0ltxp0baj0
-:END:
 #+begin_src emacs-lisp
 (defhydra hydra-flycheck
   (:pre (flycheck-list-errors)
@@ -6781,9 +6236,6 @@ My buffer-related keybinds are all prefixed by ~b~.
 #+end_src
 
 ** Files
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Files-9lj2j9q0baj0
-:END:
 My keybinds for file manipulation are prefixed by ~f~.
 #+name: keybinds-files
 | Key | Function             | Description |
@@ -6800,7 +6252,7 @@ I also have some keybinds dedicated to opening specific files.
 #+begin_src emacs-lisp :tangle no
 "fc"  '((lambda ()
           (interactive)
-          (find-file "~/org/config/emacs.org"))
+          (find-file "~/.emacs.d/vugomars.org"))
         :wk "emacs.org")
 "fi"  '((lambda ()
           (interactive)
@@ -6813,16 +6265,9 @@ I also have some keybinds dedicated to opening specific files.
                                     (file-name-as-directory "straight")
                                     (file-name-as-directory "repos"))))
         :which-key "straight package")
-"fS"  '((lambda ()
-          (interactive)
-          (find-file "~/org/config/stumpwm.org"))
-        :which-key "stumpwm.org")
 #+end_src
 
 ** Help
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Help-ock4suq0baj0
-:END:
 My keybinds for help are prefixed by ~h~.
 #+name: keybinds-help
 | Key | Function                 | Description |
@@ -6844,9 +6289,6 @@ My keybinds for help are prefixed by ~h~.
 | dv  | helpful-variable         |             |
 
 ** Project
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Project-yfo8z3r0baj0
-:END:
 My keybinds for my projects are prefixed by ~p~.
 #+name: keybinds-project
 | Key | Function                                   | Description |
@@ -6866,9 +6308,6 @@ My keybinds for my projects are prefixed by ~p~.
 | v   | projectile-vc                              |             |
 
 ** Text
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Text-yf0cb4s0baj0
-:END:
 The prefix here is ~T~.
 #+name: keybinds-text
 | Key | Function             | Description |
@@ -6880,9 +6319,6 @@ The prefix here is ~T~.
 | z   | hydra-zoom/body      |             |
 
 ** Toggles
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Toggles-9hoj2br0baj0
-:END:
 My toggle keybinds are prefixed by ~t~.
 #+name: keybinds-toggle
 | Key | Function                              | Description  |
@@ -6898,19 +6334,15 @@ My toggle keybinds are prefixed by ~t~.
 | is  | set-input-method                      |              |
 
 ** Windows
-:PROPERTIES:
-:CUSTOM_ID: Keybindings-Windows-fbgcper0baj0
-:END:
-A couple of keybinds are hidden from which-key, otherwise there’s not
-much to say. The prefix here is ~w~.
+A couple of keybinds are hidden from which-key, otherwise there’s not much to say. The prefix here is ~w~.
 #+name: keybinds-windows
 | Key | Function                      | Description |
 |-----+-------------------------------+-------------|
 |     |                               | windows     |
-| c   | evil-window-left              |             |
-| t   | evil-window-down              |             |
-| s   | evil-window-up                |             |
-| r   | evil-window-right             |             |
+| h   | evil-window-left              |             |
+| j   | evil-window-down              |             |
+| k   | evil-window-up                |             |
+| l   | evil-window-right             |             |
 | .   | windows-adjust-size/body      |             |
 | s   | split-window-below-and-focus  |             |
 | v   | split-window-right-and-focus  |             |
@@ -6944,10 +6376,4 @@ Why would I ever use any of these keybinds? They are prefixed with ~q~.
 | Q   | kill-emacs                 |             |
 
 * TODOs                                                            :noexport:
-:PROPERTIES:
-:CUSTOM_ID: Various-TODOsnwt6fl6184j0
-:END:
 ** TODO Get started with org-roam
-:PROPERTIES:
-:CUSTOM_ID: TODOs-Get-started-with-org-roam-6w2jh671kij0
-:END:

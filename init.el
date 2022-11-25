@@ -1,3 +1,38 @@
+(setq package-archives '(("melpa"  . "https://melpa.org/packages/")
+                         ("gnu"    . "https://elpa.gnu.org/packages/")
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+
+(defvar bootstrap-version)
+(defvar comp-deferred-compilation-deny-list ()) ; workaround, otherwise straight shits itself
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+
+(setq straight-host-usernames
+      '((github . "vugomars")
+        (gitlab . "vugomars")))
+
+(setq straight-vc-git-default-remote-name "straight")
+
+(straight-use-package '(use-package :build t))
+(setq use-package-always-ensure t)
+
+  ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
+  (setq user-emacs-directory (expand-file-name "~/.emacs.d/")
+        url-history-file (expand-file-name "url/history" user-emacs-directory))
+
 (add-hook 'before-save-hook #'whitespace-cleanup)
 
 (setq-default sentence-end-double-space nil)
@@ -38,10 +73,21 @@
 
 (global-auto-revert-mode 1)
 
-(setq undo-limit        100000000
-      auto-save-default t)
+;; Profile emacs startup
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "*** Emacs loaded in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
 
-(setq window-combination-resize t) ; take new window space from all other windows
+  ;; Keep customization settings in a temporary file (thanks Ambrevar!)
+  (setq custom-file
+        (if (boundp 'server-socket-dir)
+            (expand-file-name "custom.el" server-socket-dir)
+          (expand-file-name (format "emacs-custom-%s.el" (user-uid)) temporary-file-directory)))
+  (load custom-file t)
 
 (setq user-full-name       "Dang Quang Vu"
       user-real-login-name "Dang Quang Vu"
@@ -82,20 +128,61 @@ the user."
 
 (add-hook 'after-change-major-mode-hook #'modeline-contitional-buffer-encoding)
 
-(defvar dqv/default-font-size 170
-  "Default font size.")
+  (set-face-attribute 'default nil
+                      :font "JetBrains Mono"
+                      :weight 'light
+                      :height 160)
 
-(defvar dqv/default-font-name "Cascadia Code"
-  "Default font.")
+  ;; Set the fixed pitch face
+  (set-face-attribute 'fixed-pitch nil
+                      :font "JetBrains Mono"
+                      :weight 'light
+                      :height 160)
 
-(defun my/set-font ()
-  (when (find-font (font-spec :name dqv/default-font-name))
-    (set-face-attribute 'default nil
-                        :font dqv/default-font-name
-                        :height dqv/default-font-size)))
+  ;; Set the variable pitch face
+  (set-face-attribute 'variable-pitch nil
+                      ;; :font "Cantarell"
+                      :font "Iosevka Aile"
+                      :height 160
+                      :weight 'light)
 
-(my/set-font)
-(add-hook 'server-after-make-frame-hook #'my/set-font)
+  (set-fontset-font t 'symbol "Noto Color Emoji")
+  (set-fontset-font t 'symbol "Symbola" nil 'append)
+
+  (use-package emojify
+    :straight (:build t)
+    :general
+    (dqv/leader-keys
+      "i e" '(emojify-insert-emoji :wk "Emoji"))
+    :custom
+    (emojify-emoji-set "emojione-v2.2.6")
+    (emojify-emojis-dir (concat user-emacs-directory "emojify/"))
+    (emojify-display-style 'image)
+    :config
+    (global-emojify-mode 1))
+
+(defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
+  (let* ((block-idx (cl-position-if
+                         (lambda (i) (string-equal (car i) block-name))
+                         unicode-fonts-block-font-mapping))
+         (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
+         (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
+    (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
+          `(,updated-block))))
+
+(use-package unicode-fonts
+  :custom
+  (unicode-fonts-skip-font-groups '(low-quality-glyphs))
+  :config
+  ;; Fix the font mappings to use the right emoji font
+  (mapcar
+    (lambda (block-name)
+      (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
+    '("Dingbats"
+      "Emoticons"
+      "Miscellaneous Symbols and Pictographs"
+      "Transport and Map Symbols"))
+  (unicode-fonts-setup))
 
 (setq frame-title-format
       '(""
@@ -209,37 +296,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (let (return)
     (dolist (elt elements return)
       (setq return (add-to-list list-var elt append compare-fn)))))
-
-(setq package-archives '(("melpa"  . "https://melpa.org/packages/")
-                         ("gnu"    . "https://elpa.gnu.org/packages/")
-                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
-
-(defvar bootstrap-version)
-(defvar comp-deferred-compilation-deny-list ()) ; workaround, otherwise straight shits itself
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-
-(package-initialize)
-(unless package-archive-contents
-  (package-refresh-contents))
-
-(setq straight-host-usernames
-      '((github . "vugomars")
-        (gitlab . "vugomars")))
-
-(setq straight-vc-git-default-remote-name "straight")
-
-(straight-use-package '(use-package :build t))
-(setq use-package-always-ensure t)
 
 (use-package which-key
   :straight (:build t)
@@ -446,6 +502,13 @@ APPEND and COMPARE-FN, see `add-to-list'."
   ("q" nil :exit t)
   ("j" my/decrease-frame-alpha-background)
   ("k" my/increase-frame-alpha-background))
+
+(defun dqv/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer
+        (delq (current-buffer)
+              (remove-if-not 'buffer-file-name (buffer-list)))))
 
 (use-package citeproc
   :after (org)
@@ -677,100 +740,17 @@ APPEND and COMPARE-FN, see `add-to-list'."
                         ("\\section{%s}" . "\\section*{%s}")
                         ("\\subsection{%s}" . "\\subsection*{%s}")
                         ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))))
-    (defvar phundrak//projects-config-target
-      "/ssh:Tilo:~/www/phundrak.com/config"
-      "Points to where exported files for config.phundrak.com should be put.")
-    (defvar phundrak//projects-config-source
-      "~/org/config/"
-      "Points to where the sources for config.phundrak.com are.")
-    (defvar phundrak//projects-config-language
-      "en"
-      "Language of the website config.phundrak.com.")
-    (defvar phundrak//projects-config-recursive
-      t
-      "Defines whether subdirectories should be parsed for config.phundrak.com.")
-    (defvar phundrak//projects-conlanging-target
-      "/rsync:Tilo:~/www/phundrak.com/conlang"
-      "Points to where exported files for langue.phundrak.com should be put.")
-    (defvar phundrak//projects-conlanging-source
-      "~/Documents/conlanging/content/"
-      "Points to where the sources for langue.phundrak.com are.")
-    (defvar phundrak//projects-conlanging-language
-      "en"
-      "Language of langue.phundrak.com.")
-    (defvar phundrak//projects-conlanging-recursive
-      t
-      "Defines whether subdirectories should be parsed for langue.phundrak.com.")
+    
+    
     (setq org-publish-project-alist
           `(
-            ("config-website-org"
-             :base-directory ,phundrak//projects-config-source
-             :base-extension "org"
-             :publishing-directory ,phundrak//projects-config-target
-             :recursive ,phundrak//projects-config-recursive
-             :language ,phundrak//projects-config-language
-             :publishing-function org-html-publish-to-html
-             :headline-levels 5
-             :auto-sitemap t
-             :auto-preamble t)
-            ("config-website-static"
-             :base-directory ,phundrak//projects-config-source
-             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub\\|md"
-             :publishing-directory ,phundrak//projects-config-target
-             :recursive ,phundrak//projects-config-recursive
-             :language ,phundrak//projects-config-language
-             :publishing-function org-publish-attachment)
-            ("config-website"
-             :components ("config-website-org"
-                          "config-website-static"))
-            ("conlang-phundrak-com-org"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "org"
-             :exclude ,(rx (* print)
-                           (or "CONTRIB"
-                               "README"
-                               "header"
-                               "temp"
-                               "private"
-                               "svg-ink")
-                           (* print))
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-html-publish-to-html
-             :headline-levels 5
-             :auto-sitemap t
-             :auto-preamble t)
-            ("conlang-phundrak-com-pdf"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "org"
-             :exclude ,(rx (* print)
-                           (or "CONTRIB"
-                               "README"
-                               "header"
-                               "temp"
-                               "index"
-                               "sitemap"
-                               "private"
-                               "svg-ink")
-                           (* print))
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-latex-publish-to-pdf
-             :headline-levels 5
-             :auto-preamble t)
-            ("conlang-phundrak-com-static"
-             :base-directory ,phundrak//projects-conlanging-source
-             :base-extension "png\\|jpg\\|gif\\|webp\\|svg\\|jpeg\\|ttf\\|woff\\|txt\\|epub"
-             :publishing-directory ,phundrak//projects-conlanging-target
-             :recursive ,phundrak//projects-conlanging-recursive
-             :language ,phundrak//projects-conlanging-language
-             :publishing-function org-publish-attachment)
-            ("conlang-phundrak-com"
-             :components ("conlang-phundrak-com-org"
-                          "conlang-phundrak-com-static"
-                          "conlang-phundrak-com-pdf"))))
+            
+            
+            
+            
+            
+            
+            ))
     (add-hook 'org-mode-hook
               (lambda ()
                 (dolist (pair '(("[ ]"         . ?☐)
@@ -1031,9 +1011,19 @@ the value `split-window-right', then it will be changed to
   :after (ox org)
   :straight (:build t))
 
+(setq org-publish-project-alist
+      `(
+        
+        
+        
+        
+        
+        
+        ))
+
 (use-package reftex
   :commands turn-on-reftex
-  :init (setq reftex-default-bibliography "~/org/bibliography/references.bib"
+  :init (setq reftex-default-bibliography "~/Dropbox/Org/bibliography/references.bib"
               reftex-plug-into-AUCTeX     t))
 
 (use-package org-ref
@@ -1051,9 +1041,9 @@ the value `split-window-right', then it will be changed to
   (add-hook 'org-mode-hook (lambda () (require 'org-ref)))
   :config
   (setq bibtex-completion-pdf-field    "file"
-        bibtex-completion-notes-path   "~/org/bibliography/notes/"
-        bibtex-completion-bibliography "~/org/bibliography/references.bib"
-        bibtex-completion-library-path "~/org/bibliography/bibtex-pdfs/"
+        bibtex-completion-notes-path   "~/Dropbox/Org/bibliography/notes/"
+        bibtex-completion-bibliography "~/Dropbox/Org/bibliography/references.bib"
+        bibtex-completion-library-path "~/Dropbox/Org/bibliography/bibtex-pdfs/"
         bibtex-completion-pdf-symbol   "⌘"
         bibtex-completion-notes-symbol "✎")
   :general
@@ -1815,17 +1805,6 @@ deactivate `magit-todos-mode', otherwise enable it."
     "c" #'multi-vterm
     "j" #'multi-vterm-next
     "k" #'multi-vterm-prev))
-
-(use-package wttrin
-  :defer t
-  :straight (wttrin :build t
-                    :local-repo "~/fromGIT/emacs-packages/emacs-wttrin"
-                    :type git)
-                    ;; :host github
-                    ;; :repo "Phundrak/emacs-wttrin"
-  :config
-  (setq wttrin-default-cities '("Aubervilliers" "Paris" "Lyon" "Nonières" "Saint Agrève")
-        wttrin-use-metric t))
 
 (general-define-key
  :states 'visual
@@ -3637,7 +3616,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :ensure t
   :after all-the-icons
   :config
-  (setq dashboard-banner-logo-title "Vugomars’s Emacs"
+  (setq dashboard-banner-logo-title "Vugomars’ Emacs"
         dashboard-startup-banner    'logo
         dashboard-center-content    t
         dashboard-show-shortcuts    t
@@ -3648,7 +3627,7 @@ Spell Commands^^           Add To Dictionary^^              Other
         dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
   (setq dashboard-navigator-buttons
         `(((,(all-the-icons-faicon "language" :height 1.1 :v-adjust 0.0)
-            "Linguistics Website"
+            "Vugomars' Website"
             ""
             (lambda (&rest _) (browse-url "https://vugomars.com"))))
           ((,(all-the-icons-faicon "level-up" :height 1.1 :v-adjust 0.0)
@@ -3776,12 +3755,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   :hook (Info-selection . info-colors-fontify-node)
   :hook (Info-mode      . mixed-pitch-mode))
 
-(use-package archwiki
-  :defer t
-  :straight (archwiki :build t
-                      :type git
-                      :repo "https://labs.phundrak.com/phundrak/archwiki.el"))
-
 (use-package avy
   :defer t
   :straight t
@@ -3900,12 +3873,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :init (winum-mode))
 
-(use-package ytplay
-  :defer t
-  :straight (ytplay :build t
-                    :type git
-                    :repo "https://labs.phundrak.com/phundrak/ytplay.el"))
-
 (general-define-key
  :keymaps 'global-map
  "<mouse-2>" nil
@@ -4018,7 +3985,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "fs" #'save-buffer
   "fc"  '((lambda ()
             (interactive)
-            (find-file "~/org/config/emacs.org"))
+            (find-file "~/.emacs.d/vugomars.org"))
           :wk "emacs.org")
   "fi"  '((lambda ()
             (interactive)
@@ -4031,10 +3998,6 @@ Spell Commands^^           Add To Dictionary^^              Other
                                       (file-name-as-directory "straight")
                                       (file-name-as-directory "repos"))))
           :which-key "straight package")
-  "fS"  '((lambda ()
-            (interactive)
-            (find-file "~/org/config/stumpwm.org"))
-          :which-key "stumpwm.org")
 
   "h" '(:ignore t :wk "help")
   "hk" #'which-key-show-top-level
@@ -4073,10 +4036,10 @@ Spell Commands^^           Add To Dictionary^^              Other
   "Tz" #'hydra-zoom/body
 
   "w" '(:ignore t :wk "windows")
-  "wc" #'evil-window-left
-  "wt" #'evil-window-down
-  "ws" #'evil-window-up
-  "wr" #'evil-window-right
+  "wh" #'evil-window-left
+  "wj" #'evil-window-down
+  "wk" #'evil-window-up
+  "wl" #'evil-window-right
   "w." #'windows-adjust-size/body
   "ws" #'split-window-below-and-focus
   "wv" #'split-window-right-and-focus
@@ -4093,7 +4056,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "w9" '(winum-select-window-9 :wk t)
   "wb" #'kill-buffer-and-delete-window
   "wd" #'delete-window
-  "wO" #'other-window
+  "wO" #'dqv/kill-other-buffers
   "wo" #'delete-other-windows
   "ww" '(:ignore t :wk "writeroom")
   "ww." #'writeroom-buffer-width/body
