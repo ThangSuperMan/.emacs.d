@@ -73,7 +73,6 @@
   - [[#org-gcal][Org Gcal]]
   - [[#org-roam][Org Roam]]
   - [[#leetcode][Leetcode]]
-  - [[#quit][Quit]]
 
 * Introduction
 - After a couple year using =Doom Emacs=, i'm finally switching back to a vanilla configuration! Because i got tired some framework getting in my way when i wanted to do stuff. I'm sure this is more applicable to =Doom Emacs= since the letter has nice macros written so easily add new packages and configure them.
@@ -3412,7 +3411,7 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
       :keybinding "l")
 
     (defengine translate
-      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      "https://www.macmillandictionary.com/dictionary/british/%s"
       :keybinding "t")
 
     (defengine youtube
@@ -6371,7 +6370,6 @@ Undefining some stuff to make keybind prefixes work correctly.
 
   <<general-keybindings-gen(table=keybinds-windows, prefix="w")>>
 
-  <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
   <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
   <<general-keybindings-gen(table=keybinds-leetcode, prefix="a")>>
@@ -6474,6 +6472,7 @@ I also have some keybinds dedicated to opening specific files.
           (interactive)
           (find-file "~/.emacs.d/vugomars.org"))
         :wk "emacs.org")
+
 "fi"  '((lambda ()
           (interactive)
           (find-file (concat user-emacs-directory "init.el")))
@@ -6485,6 +6484,17 @@ I also have some keybinds dedicated to opening specific files.
                                     (file-name-as-directory "straight")
                                     (file-name-as-directory "repos"))))
         :which-key "straight package")
+
+"owg"  '((lambda ()
+          (interactive)
+          (browse-url "https://github.com/vugomars"))
+        :wk "My Github")
+
+"owc"  '((lambda ()
+          (interactive)
+          (browse-url "https://calendar.google.com/calendar/u/0/r?pli=1"))
+        :wk "My Calender")
+
 #+end_src
 
 ** Help
@@ -6617,25 +6627,16 @@ A couple of keybinds are hidden from roam mode, They are prefixed with ~n~.
 ** Leetcode
 A couple of keybinds are use for application leetcode, They are prefixed with ~a~.
 #+name: keybinds-leetcode
-| Key | Function | Description |
-|-----+----------+-------------|
-|     |          | quit        |
-| ll  | leetcode |             |
-| ld  | leetcode-daily |             |
+| Key | Function                         | Description |
+|-----+----------------------------------+-------------|
+|     |                                  | quit        |
+| ll  | leetcode                         |             |
+| ld  | leetcode-daily                   |             |
 | lo  | leetcode-show-problem-in-browser |             |
-| lO  | leetcode-show-problem-by-slub |             |
-| lS  | leetcode-submit |             |
-| ls  | leetcode-show-problem |             |
+| lO  | leetcode-show-problem-by-slub    |             |
+| lS  | leetcode-submit                  |             |
+| ls  | leetcode-show-problem            |             |
 
-** Quit
-Why would I ever use any of these keybinds? They are prefixed with ~q~.
-#+name: keybinds-quit
-| Key | Function                   | Description |
-|-----+----------------------------+-------------|
-|     |                            | quit        |
-| f   | delete-frame               |             |
-| q   | save-buffers-kill-terminal |             |
-| Q   | kill-emacs                 |             |
 
 * TODOs                                                            :noexport:
 ** TODO Get started with org-roam

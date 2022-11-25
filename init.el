@@ -2049,7 +2049,7 @@ deactivate `magit-todos-mode', otherwise enable it."
       :keybinding "l")
 
     (defengine translate
-      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      "https://www.macmillandictionary.com/dictionary/british/%s"
       :keybinding "t")
 
     (defengine youtube
@@ -4257,6 +4257,7 @@ Spell Commands^^           Add To Dictionary^^              Other
             (interactive)
             (find-file "~/.emacs.d/vugomars.org"))
           :wk "emacs.org")
+  
   "fi"  '((lambda ()
             (interactive)
             (find-file (concat user-emacs-directory "init.el")))
@@ -4268,6 +4269,17 @@ Spell Commands^^           Add To Dictionary^^              Other
                                       (file-name-as-directory "straight")
                                       (file-name-as-directory "repos"))))
           :which-key "straight package")
+  
+  "owg"  '((lambda ()
+            (interactive)
+            (browse-url "https://github.com/vugomars"))
+          :wk "My Github")
+  
+  "owc"  '((lambda ()
+            (interactive)
+            (browse-url "https://calendar.google.com/calendar/u/0/r?pli=1"))
+          :wk "My Calender")
+  
 
   "h" '(:ignore t :wk "help")
   "hk" #'which-key-show-top-level
@@ -4329,10 +4341,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   "wO" #'dqv/kill-other-buffers
   "wo" #'delete-other-windows
 
-  "q" '(:ignore t :wk "quit")
-  "qf" #'delete-frame
-  "qq" #'save-buffers-kill-terminal
-  "qQ" #'kill-emacs
   "a" '(:ignore t :wk "quit")
   "agp" #'org-gcal-post-at-point
   "ags" #'org-gcal-sync
