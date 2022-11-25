@@ -564,19 +564,6 @@ With a prefix argument, TRASH is nil."
   ("0" text-scale-adjust "reset")
   ("q" nil "finished" :exit t))
 
-(defhydra writeroom-buffer-width ()
-  "
-^Width^        ^Other
-^^^^^^^^-----------------------
-[_j_] enlarge  [_r_/_0_] adjust
-[_k_] shrink   [_q_]^^   quit
-"
-  ("q" nil :exit t)
-  ("j" writeroom-increase-width "enlarge")
-  ("k" writeroom-decrease-width "shrink")
-  ("r" writeroom-adjust-width   "adjust")
-  ("0" writeroom-adjust-width   "adjust"))
-
 (defhydra windows-adjust-size ()
   "
 ^Zoom^                                ^Other
@@ -1585,104 +1572,6 @@ the value `split-window-right', then it will be changed to
 (use-package docker
   :defer t
   :straight (:build t))
-
-(use-package elfeed
-  :defer t
-  :straight (:build t)
-  :config
-  (defun my/elfeed-filter-youtube-videos (orig-fun &rest args)
-    "Open with mpv the video leading to PATH"
-    (let ((link (elfeed-entry-link elfeed-show-entry)))
-      (when link
-        (if (string-match-p ".*youtube\.com.*watch.*" link)
-            ;; This is a YouTube video, open it with mpv
-            (progn
-              (require 'ytplay)
-              (ytplay link))
-          (apply orig-fun args)))))
-  
-  (advice-add 'elfeed-show-visit :around #'my/elfeed-filter-youtube-videos)
-  :custom
-  ((elfeed-search-filter "@6-months-ago")
-   (elfeed-db-directory  (expand-file-name ".elfeed-db"
-                                           user-emacs-directory))))
-
-(defun my/elfeed-filter-youtube-videos (orig-fun &rest args)
-  "Open with mpv the video leading to PATH"
-  (let ((link (elfeed-entry-link elfeed-show-entry)))
-    (when link
-      (if (string-match-p ".*youtube\.com.*watch.*" link)
-          ;; This is a YouTube video, open it with mpv
-          (progn
-            (require 'ytplay)
-            (ytplay link))
-        (apply orig-fun args)))))
-
-(advice-add 'elfeed-show-visit :around #'my/elfeed-filter-youtube-videos)
-
-(use-package elfeed-goodies
-  :defer t
-  :after elfeed
-  :commands elfeed-goodies/setup
-  :straight (:build t)
-  :init
-  (elfeed-goodies/setup)
-  :general
-  (dqv/underfine
-    :keymaps '(elfeed-show-mode-map elfeed-search-mode-map)
-    :packages 'elfeed
-    "DEL" nil
-    "s"   nil)
-  (dqv/evil
-    :keymaps 'elfeed-show-mode-map
-    :packages 'elfeed
-    "+" #'elfeed-show-tag
-    "-" #'elfeed-show-untag
-    "«" #'elfeed-show-prev
-    "»" #'elfeed-show-next
-    "b" #'elfeed-show-visit
-    "C" #'elfeed-kill-link-url-at-point
-    "d" #'elfeed-show-save-enclosure
-    "l" #'elfeed-show-next-link
-    "o" #'elfeed-goodies/show-ace-link
-    "q" #'elfeed-kill-buffer
-    "S" #'elfeed-show-new-live-search
-    "u" #'elfeed-show-tag--unread
-    "y" #'elfeed-show-yank)
-  (dqv/evil
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    "«" #'elfeed-search-first-entry
-    "»" #'elfeed-search-last-entry
-    "b" #'elfeed-search-browse-url
-    "f" '(:ignore t :wk "filter")
-    "fc" #'elfeed-search-clear-filter
-    "fl" #'elfeed-search-live-filter
-    "fs" #'elfeed-search-set-filter
-    "u" '(:ignore t :wk "update")
-    "us" #'elfeed-search-fetch
-    "uS" #'elfeed-search-update
-    "uu" #'elfeed-update
-    "uU" #'elfeed-search-update--force
-    "y" #'elfeed-search-yank)
-  (dqv/major-leader-key
-    :keymaps 'elfeed-search-mode-map
-    :packages 'elfeed
-    "c" #'elfeed-db-compact
-    "t" '(:ignore t :wk "tag")
-    "tt" #'elfeed-search-tag-all-unread
-    "tu" #'elfeed-search-untag-all-unread
-    "tT" #'elfeed-search-tag-all
-    "tU" #'elfeed-search-untag-all))
-
-(use-package elfeed-org
-  :defer t
-  :after elfeed
-  :straight (:build t)
-  :init
-  (elfeed-org)
-  :config
-  (setq rmh-elfeed-org-files '("~/org/elfeed.org")))
 
 (use-package nov
   :straight (:build t)
@@ -3871,9 +3760,7 @@ Spell Commands^^           Add To Dictionary^^              Other
                                 (straight-pull-all)
                                 (straight-rebuild-all)))))))
 
-  (setq dashboard-items '((recents  . 15)
-                          (agenda   . 10)
-                          (projects . 10)))
+  (setq dashboard-items '((agenda   . 15)))
   (dashboard-setup-startup-hook)
   :init
   (add-hook 'after-init-hook 'dashboard-refresh-buffer))
@@ -4304,9 +4191,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   "wd" #'delete-window
   "wO" #'dqv/kill-other-buffers
   "wo" #'delete-other-windows
-  "ww" '(:ignore t :wk "writeroom")
-  "ww." #'writeroom-buffer-width/body
-  "www" #'writeroom-mode
 
   "q" '(:ignore t :wk "quit")
   "qf" #'delete-frame
