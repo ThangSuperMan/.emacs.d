@@ -72,6 +72,7 @@
   - [[#windows][Windows]]
   - [[#org-gcal][Org Gcal]]
   - [[#org-roam][Org Roam]]
+  - [[#leetcode][Leetcode]]
   - [[#quit][Quit]]
 
 * Introduction
@@ -3226,6 +3227,17 @@ in my Emacs build, and these keybinds *will not* be tangled.
  "C-u"       #'xwidget-webkit-scroll-down)
 #+end_src
 
+*** Leetcode
+#+begin_src emacs-lisp
+(use-package leetcode
+  :ensure t
+  :straight (:build t))
+(setq leetcode-prefer-language "rust"
+      leetcode-prefer-sql "mysql"
+      leetcode-save-solutions t
+      leetcode-directory "~/Development/leetcode-solution")
+#+end_src
+
 ** Editing
 *** Easily Inserting Pairs
 First, I’ll define some keybindings for easily inserting pairs when editing text.
@@ -3360,6 +3372,145 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
               ;; ("C-n" . maple-iedit-match-next)
               ;; ("C-p" . maple-iedit-match-previous)
               ("C-t" . maple-iedit-skip-and-match-next)))
+#+end_src
+
+*** Engine
+#+begin_src emacs-lisp
+  (use-package engine-mode
+    :config
+    (engine/set-keymap-prefix (kbd "C-c s"))
+    (setq browse-url-browser-function 'browse-url-default-macosx-browser
+          engine/browser-function 'browse-url-default-macosx-browser
+          )
+
+    (defengine duckduckgo
+      "https://duckduckgo.com/?q=%s"
+      :keybinding "d")
+
+    (defengine github
+      "https://github.com/search?ref=simplesearch&q=%s"
+      :keybinding "1")
+
+    (defengine gitlab
+      "https://gitlab.com/search?search=%s&group_id=&project_id=&snippets=false&repository_ref=&nav_source=navbar"
+      :keybinding "2")
+
+    (defengine stack-overflow
+      "https://stackoverflow.com/search?q=%s"
+      :keybinding "s")
+
+    (defengine npm
+      "https://www.npmjs.com/search?q=%s"
+      :keybinding "n")
+
+    (defengine crates
+      "https://crates.io/search?q=%s"
+      :keybinding "c")
+
+    (defengine localhost
+      "http://localhost:%s"
+      :keybinding "l")
+
+    (defengine translate
+      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      :keybinding "t")
+
+    (defengine youtube
+      "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+      :keybinding "y")
+
+    (defengine google
+      "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+      :keybinding "g")
+
+    (engine-mode 1))
+#+end_src
+
+*** Bm
+#+begin_src emacs-lisp
+  (use-package bm
+    :demand t
+    :init
+    ;; restore on load (even before you require bm)
+    (setq bm-restore-repository-on-load t)
+
+    :config
+    ;; Allow cross-buffer 'next'
+    (setq bm-cycle-all-buffers t
+
+          ;; where to store persistant files
+          bm-repository-file "~/.emacs.d/bm-repository")
+
+    ;; save bookmarks
+    (setq-default bm-buffer-persistence t)
+
+    ;; Loading the repository from file when on start up.
+    (add-hook 'after-init-hook 'bm-repository-load)
+
+    ;; Saving bookmarks
+    (add-hook 'kill-buffer-hook #'bm-buffer-save)
+
+    ;; must save all bookmarks first.
+    (add-hook 'kill-emacs-hook #'(lambda nil
+                                   (bm-buffer-save-all)
+                                   (bm-repository-save)))
+
+    (add-hook 'after-save-hook #'bm-buffer-save)
+
+    ;; Restoring bookmarks
+    (add-hook 'find-file-hooks   #'bm-buffer-restore)
+    (add-hook 'after-revert-hook #'bm-buffer-restore)
+
+    (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+
+    ;; key binding
+    :bind (("C-M-s-l" . bm-toggle)
+           ("C-M-s-j" . bm-next)
+           ("C-M-s-k" . bm-previous)
+           ("C-M-s-o" . bm-show-all))
+    )
+#+end_src
+
+*** Hide-show
+#+begin_src emacs-lisp
+(use-package hideshow
+  :hook
+  (prog-mode . hs-minor-mode)
+  :bind
+  ("C-<tab>" . hs-cycle)
+  ("C-<iso-lefttab>" . hs-global-cycle)
+  ("C-S-<tab>" . hs-global-cycle))
+(defun hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children)))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))
 #+end_src
 
 ** Emacs built-ins
@@ -3847,7 +3998,6 @@ I’ll also create a fuction for connecting to this new Tramp protocol:
 + Bufler is an excellent package by alphapapa which enables you to automatically group all of your Emacs buffers into workspaces by defining a series of grouping rules. Once you have your groups defined (or use the default configuration which is quite good already), you can use the bufler-workspace-frame-set command to focus your current Emacs frame on a particular workspace so that bufler-switch-buffer will only show buffers from that workspace. In my case, this allows me to dedicate an EXWM workspace to a specific Bufler workspace so that only see the buffers I care about in that EXWM workspace.
 #+begin_src emacs-lisp
 (use-package bufler
-  :disabled
   :straight (:build t)
   :bind (("C-M-j" . bufler-switch-buffer)
          ("C-M-k" . bufler-workspace-frame-set))
@@ -6224,6 +6374,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
   <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
+  <<general-keybindings-gen(table=keybinds-leetcode, prefix="a")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6426,7 +6577,7 @@ A couple of keybinds are hidden from which-key, otherwise there’s not much to 
 | 7   | winum-select-window-7         | none        |
 | 8   | winum-select-window-8         | none        |
 | 9   | winum-select-window-9         | none        |
-| b   | kill-buffer-and-delete-window |             |
+| c   | kill-buffer-and-delete-window |             |
 | d   | delete-window                 |             |
 | O   | dqv/kill-other-buffers        |             |
 | o   | delete-other-windows          |             |
@@ -6462,6 +6613,19 @@ A couple of keybinds are hidden from roam mode, They are prefixed with ~n~.
 | fy  | org-roam-dailies-find-yesterday   |             |
 | fr  | org-roam-dailies-find-tomorrow    |             |
 | g   | org-roam-graph                    |             |
+
+** Leetcode
+A couple of keybinds are use for application leetcode, They are prefixed with ~a~.
+#+name: keybinds-leetcode
+| Key | Function | Description |
+|-----+----------+-------------|
+|     |          | quit        |
+| ll  | leetcode |             |
+| ld  | leetcode-daily |             |
+| lo  | leetcode-show-problem-in-browser |             |
+| lO  | leetcode-show-problem-by-slub |             |
+| lS  | leetcode-submit |             |
+| ls  | leetcode-show-problem |             |
 
 ** Quit
 Why would I ever use any of these keybinds? They are prefixed with ~q~.

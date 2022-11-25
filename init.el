@@ -1905,6 +1905,14 @@ deactivate `magit-todos-mode', otherwise enable it."
     "j" #'multi-vterm-next
     "k" #'multi-vterm-prev))
 
+(use-package leetcode
+  :ensure t
+  :straight (:build t))
+(setq leetcode-prefer-language "rust"
+      leetcode-prefer-sql "mysql"
+      leetcode-save-solutions t
+      leetcode-directory "~/Development/leetcode-solution")
+
 (general-define-key
  :states 'visual
  "M-["  #'insert-pair
@@ -2004,6 +2012,136 @@ deactivate `magit-todos-mode', otherwise enable it."
               ;; ("C-n" . maple-iedit-match-next)
               ;; ("C-p" . maple-iedit-match-previous)
               ("C-t" . maple-iedit-skip-and-match-next)))
+
+  (use-package engine-mode
+    :config
+    (engine/set-keymap-prefix (kbd "C-c s"))
+    (setq browse-url-browser-function 'browse-url-default-macosx-browser
+          engine/browser-function 'browse-url-default-macosx-browser
+          )
+
+    (defengine duckduckgo
+      "https://duckduckgo.com/?q=%s"
+      :keybinding "d")
+
+    (defengine github
+      "https://github.com/search?ref=simplesearch&q=%s"
+      :keybinding "1")
+
+    (defengine gitlab
+      "https://gitlab.com/search?search=%s&group_id=&project_id=&snippets=false&repository_ref=&nav_source=navbar"
+      :keybinding "2")
+
+    (defengine stack-overflow
+      "https://stackoverflow.com/search?q=%s"
+      :keybinding "s")
+
+    (defengine npm
+      "https://www.npmjs.com/search?q=%s"
+      :keybinding "n")
+
+    (defengine crates
+      "https://crates.io/search?q=%s"
+      :keybinding "c")
+
+    (defengine localhost
+      "http://localhost:%s"
+      :keybinding "l")
+
+    (defengine translate
+      "https://translate.google.com/?sl=en&tl=vi&text=%s&op=translate"
+      :keybinding "t")
+
+    (defengine youtube
+      "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
+      :keybinding "y")
+
+    (defengine google
+      "http://www.google.com/search?ie=utf-8&oe=utf-8&q=%s"
+      :keybinding "g")
+
+    (engine-mode 1))
+
+  (use-package bm
+    :demand t
+    :init
+    ;; restore on load (even before you require bm)
+    (setq bm-restore-repository-on-load t)
+
+    :config
+    ;; Allow cross-buffer 'next'
+    (setq bm-cycle-all-buffers t
+
+          ;; where to store persistant files
+          bm-repository-file "~/.emacs.d/bm-repository")
+
+    ;; save bookmarks
+    (setq-default bm-buffer-persistence t)
+
+    ;; Loading the repository from file when on start up.
+    (add-hook 'after-init-hook 'bm-repository-load)
+
+    ;; Saving bookmarks
+    (add-hook 'kill-buffer-hook #'bm-buffer-save)
+
+    ;; must save all bookmarks first.
+    (add-hook 'kill-emacs-hook #'(lambda nil
+                                   (bm-buffer-save-all)
+                                   (bm-repository-save)))
+
+    (add-hook 'after-save-hook #'bm-buffer-save)
+
+    ;; Restoring bookmarks
+    (add-hook 'find-file-hooks   #'bm-buffer-restore)
+    (add-hook 'after-revert-hook #'bm-buffer-restore)
+
+    (add-hook 'vc-before-checkin-hook #'bm-buffer-save)
+
+    ;; key binding
+    :bind (("C-M-s-l" . bm-toggle)
+           ("C-M-s-j" . bm-next)
+           ("C-M-s-k" . bm-previous)
+           ("C-M-s-o" . bm-show-all))
+    )
+
+(use-package hideshow
+  :hook
+  (prog-mode . hs-minor-mode)
+  :bind
+  ("C-<tab>" . hs-cycle)
+  ("C-<iso-lefttab>" . hs-global-cycle)
+  ("C-S-<tab>" . hs-global-cycle))
+(defun hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children)))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))
 
 (use-package dirvish
   :straight (:build t)
@@ -2264,7 +2402,6 @@ deactivate `magit-todos-mode', otherwise enable it."
   (magit-status "/yadm::"))
 
 (use-package bufler
-  :disabled
   :straight (:build t)
   :bind (("C-M-j" . bufler-switch-buffer)
          ("C-M-k" . bufler-workspace-frame-set))
@@ -4187,7 +4324,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "w7" '(winum-select-window-7 :wk t)
   "w8" '(winum-select-window-8 :wk t)
   "w9" '(winum-select-window-9 :wk t)
-  "wb" #'kill-buffer-and-delete-window
+  "wc" #'kill-buffer-and-delete-window
   "wd" #'delete-window
   "wO" #'dqv/kill-other-buffers
   "wo" #'delete-other-windows
@@ -4216,6 +4353,13 @@ Spell Commands^^           Add To Dictionary^^              Other
   "nfy" #'org-roam-dailies-find-yesterday
   "nfr" #'org-roam-dailies-find-tomorrow
   "ng" #'org-roam-graph
+  "a" '(:ignore t :wk "quit")
+  "all" #'leetcode
+  "ald" #'leetcode-daily
+  "alo" #'leetcode-show-problem-in-browser
+  "alO" #'leetcode-show-problem-by-slub
+  "alS" #'leetcode-submit
+  "als" #'leetcode-show-problem
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
