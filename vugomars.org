@@ -352,7 +352,6 @@ Much more polite! Note that if the buffer is modified and its changes haven’t 
   (load custom-file t)
 #+end_src
 
-
 ** Personal Information
 Emacs needs to know its master! For various reasons by the way, some packages rely of these variables to know who it is talking to or dealing with, such as ~mu4e~ which will guess who you are if you haven’t set it up correctly.
 #+begin_src emacs-lisp
@@ -2809,19 +2808,8 @@ left it.
 #+end_src
 
 *** Project Management
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Project-Managementi9n5fl6184j0
-:END:
 **** Magit
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Project-Management-Magitvso5fl6184j0
-:END:
-Magit is an awesome wrapper around Git for Emacs! Very often, I go
-from disliking to really hating Git GUI clients because they often
-obfuscate which Git commands are used to make things happen. Such a
-thing doesn’t happen with Magit, it’s pretty transparent but it still
-provides some awesome features and visualizations of what you are
-doing and what Git is doing! In short, I absolutely love it!
+Magit is an awesome wrapper around Git for Emacs! Very often, I go from disliking to really hating Git GUI clients because they often obfuscate which Git commands are used to make things happen. Such a thing doesn’t happen with Magit, it’s pretty transparent but it still provides some awesome features and visualizations of what you are doing and what Git is doing! In short, I absolutely love it!
 #+begin_src emacs-lisp
 (use-package magit
   :straight (:build t)
@@ -2868,14 +2856,10 @@ doing and what Git is doing! In short, I absolutely love it!
     "fF" #'magit-find-file))
 #+end_src
 
-[[https://github.com/alphapapa][Alphapapa]] also created an awesome package for Magit: magit-todos which
-display in the Magit buffer a list of TODOs found in the current
-project to remind you of what to do next.
+***** HL Todo
+[[https://github.com/alphapapa][Alphapapa]] also created an awesome package for Magit: magit-todos which display in the Magit buffer a list of TODOs found in the current project to remind you of what to do next.
 
-First, let’s setup our todo keywords with ~hl-todo~. A good few todo
-keywords are already defined in the ~hl-todo-keyword-faces~ variable.
-Why not use them? ~hl-todo-mode~ enables fontlock highlight of these
-keywords in a buffer. Let’s enable this mode globally.
+First, let’s setup our todo keywords with ~hl-todo~. A good few todo keywords are already defined in the ~hl-todo-keyword-faces~ variable. Why not use them? ~hl-todo-mode~ enables fontlock highlight of these keywords in a buffer. Let’s enable this mode globally.
 #+begin_src emacs-lisp
 (use-package hl-todo
   :defer t
@@ -2890,10 +2874,8 @@ keywords in a buffer. Let’s enable this mode globally.
     "p" #'hl-todo-previous))
 #+end_src
 
-We can now configure properly ~magit-todos~. Notice my custom function
-hooked to ~magit-mode-hook~. This is because this package tries to find
-TODOs in all files in the current project, and my yadm repository’s
-root is my ~$HOME~. So, yeah, no ~magit-todos~ in yadm.
+***** Magit Todos
+We can now configure properly ~magit-todos~. Notice my custom function hooked to ~magit-mode-hook~. This is because this package tries to find TODOs in all files in the current project, and my yadm repository’s root is my ~$HOME~. So, yeah, no ~magit-todos~ in yadm.
 #+begin_src emacs-lisp
 (use-package magit-todos
   :straight (:build t)
@@ -2912,8 +2894,8 @@ deactivate `magit-todos-mode', otherwise enable it."
   (csetq magit-todos-ignore-case t))
 #+end_src
 
-Finally, it is also possible to use Gitflow’s framework with Magit
-with ~magit-gitflow~:
+***** Gitflow
+Finally, it is also possible to use Gitflow’s framework with Magit with ~magit-gitflow~:
 #+begin_src emacs-lisp
 (use-package magit-gitflow
   :defer t
@@ -2925,16 +2907,10 @@ with ~magit-gitflow~:
   :hook (magit-mode . turn-on-magit-gitflow))
 #+end_src
 
-**** Forge
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Project-Management-Forgelcq5fl6184j0
-:END:
-Forge acts as an interface for Github, Gitlab, and Bitbucket inside
-Magit. A lot of possibilities are present, you can read issues and
-pull requests, create them, and fork projects among other things.
+***** Forge
+Forge acts as an interface for Github, Gitlab, and Bitbucket inside Magit. A lot of possibilities are present, you can read issues and pull requests, create them, and fork projects among other things.
 
-*NOTE*: Make sure to configure a GitHub token before using this
- package!
+*NOTE*: Make sure to configure a GitHub token before using this package!
 - [[https://magit.vc/manual/forge/Token-Creation.html#Token-Creation][Token Creation]]
 - [[https://magit.vc/manual/ghub/Getting-Started.html#Getting-Started][Getting started]]
 #+begin_src emacs-lisp
@@ -2957,6 +2933,41 @@ pull requests, create them, and fork projects among other things.
     "er" #'forge-edit-topic-review-requests
     "es" #'forge-edit-topic-state
     "et" #'forge-edit-topic-title))
+#+end_src
+
+***** Add Issue Number To Commit Message
+#+begin_src emacs-lisp
+ (defun buffer-insert-at-end (string)
+    "Insert STRING at the maximal point in a buffer."
+    (save-excursion
+      (goto-char (point-max))
+      (end-of-line)
+      (insert ?\n string)
+      (unless (string-suffix-p "\n" string)
+        (insert ?\n))))
+
+  (defun get-knuth-number-from-string (string)
+    "Return KNUTH issue number from STRING.
+  Return nil if STRING does not contain a KNUTH issue.
+  STRING may be nil."
+    (if (and string (string-match "\\(KNUTH-[[:digit:]]\+\\)" string))
+        (match-string 1 string)
+      nil))
+
+  (defun insert-knuth-ticket-number-from-branch ()
+    "If we're on a KNUTH feature branch, insert the ticket number."
+    (interactive)
+    (let ((knuth (get-knuth-number-from-string (magit-get-current-branch))))
+      (if (and knuth (not (buffer-line-matches-p (concat "^" knuth)))) (buffer-insert-at-end knuth))))
+
+  (defun buffer-line-matches-p (needle)
+    "Return t if the last line matches NEEDLE.
+  Ignores comments"
+    (save-excursion
+      (goto-char 0)
+      (search-forward-regexp needle nil 'noerror)))
+
+  (add-hook 'git-commit-setup-hook 'insert-knuth-ticket-number-from-branch)
 #+end_src
 
 **** Projectile
@@ -3790,25 +3801,56 @@ I’ll also create a fuction for connecting to this new Tramp protocol:
 
 ** Making my life easier
 *** Bufler
-Bufler is a package that organizes and lists buffers in a much better way than how they are usually sorted. You can easily and quickly find buffers by their group, not only by their name, and THIS is great news! Also, no ~helm~ please! And for some reasons the keybindings are borked by default, so let’s redefine them, and let’s also rebind ~SPC~ to ~p~ since it would conflict with my main ~general~ prefix.
++ Bufler is an excellent package by alphapapa which enables you to automatically group all of your Emacs buffers into workspaces by defining a series of grouping rules. Once you have your groups defined (or use the default configuration which is quite good already), you can use the bufler-workspace-frame-set command to focus your current Emacs frame on a particular workspace so that bufler-switch-buffer will only show buffers from that workspace. In my case, this allows me to dedicate an EXWM workspace to a specific Bufler workspace so that only see the buffers I care about in that EXWM workspace.
 #+begin_src emacs-lisp
 (use-package bufler
-  :straight (bufler :build t
-                    :files (:defaults (:exclude "helm-bufler.el")))
-  :defer t
-  :general
-  (dqv/evil
-   :keymaps  'bufler-list-mode-map
-   :packages 'bufler
-   "?"   #'hydra:bufler/body
-   "g"   #'bufler
-   "f"   #'bufler-list-group-frame
-   "F"   #'bufler-list-group-make-frame
-   "N"   #'bufler-list-buffer-name-workspace
-   "k"   #'bufler-list-buffer-kill
-   "p"   #'bufler-list-buffer-peek
-   "s"   #'bufler-list-buffer-save
-   "RET" #'bufler-list-buffer-switch))
+  :disabled
+  :straight (:build t)
+  :bind (("C-M-j" . bufler-switch-buffer)
+         ("C-M-k" . bufler-workspace-frame-set))
+  :config
+  (evil-collection-define-key 'normal 'bufler-list-mode-map
+    (kbd "RET")   'bufler-list-buffer-switch
+    (kbd "M-RET") 'bufler-list-buffer-peek
+    "D"           'bufler-list-buffer-kill)
+
+  (setf bufler-groups
+        (bufler-defgroups
+          ;; Subgroup collecting all named workspaces.
+          (group (auto-workspace))
+          ;; Subgroup collecting buffers in a projectile project.
+          (group (auto-projectile))
+          ;; Grouping browser windows
+          (group
+           (group-or "Browsers"
+                     (name-match "Vimb" (rx bos "vimb"))
+                     (name-match "Qutebrowser" (rx bos "Qutebrowser"))
+                     (name-match "Chromium" (rx bos "Chromium"))))
+          (group
+           (group-or "Chat"
+                     (mode-match "Telega" (rx bos "telega-"))))
+          (group
+           ;; Subgroup collecting all `help-mode' and `info-mode' buffers.
+           (group-or "Help/Info"
+                     (mode-match "*Help*" (rx bos (or "help-" "helpful-")))
+                     ;; (mode-match "*Helpful*" (rx bos "helpful-"))
+                     (mode-match "*Info*" (rx bos "info-"))))
+          (group
+           ;; Subgroup collecting all special buffers (i.e. ones that are not
+           ;; file-backed), except `magit-status-mode' buffers (which are allowed to fall
+           ;; through to other groups, so they end up grouped with their project buffers).
+           (group-and "*Special*"
+                      (name-match "**Special**"
+                                  (rx bos "*" (or "Messages" "Warnings" "scratch" "Backtrace" "Pinentry") "*"))
+                      (lambda (buffer)
+                        (unless (or (funcall (mode-match "Magit" (rx bos "magit-status"))
+                                             buffer)
+                                    (funcall (mode-match "Dired" (rx bos "dired"))
+                                             buffer)
+                                    (funcall (auto-file) buffer))
+                          "*Special*"))))
+          ;; Group remaining buffers by major mode.
+          (auto-mode))))
 #+end_src
 
 *** Helpful
@@ -5765,7 +5807,16 @@ It’s nice to know which lines were modified since the last commit in a file.
   :hook ((prog-mode     . git-gutter-mode)
          (org-mode      . git-gutter-mode)
          (markdown-mode . git-gutter-mode)
-         (latex-mode    . git-gutter-mode)))
+         (latex-mode    . git-gutter-mode))
+  :config
+  (setq git-gutter:update-interval 2)
+  ;; These characters are used in terminal mode
+  (setq git-gutter:modified-sign "≡")
+  (setq git-gutter:added-sign "≡")
+  (setq git-gutter:deleted-sign "≡")
+  (set-face-foreground 'git-gutter:added "LightGreen")
+  (set-face-foreground 'git-gutter:modified "LightGoldenrod")
+  (set-face-foreground 'git-gutter:deleted "LightCoral"))
 #+end_src
 
 *** Icons? Did someone say icons?
