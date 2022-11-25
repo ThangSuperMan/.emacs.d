@@ -69,6 +69,11 @@ We finally come to the ~use-package~ installation. This is done like so:
 #+begin_src emacs-lisp
 (customize-set-variable 'epg-pinentry-mode 'loopback)
 #+end_src
++ Access Folder
+#+begin_src emacs-lisp
+(setq insert-directory-program "gls" dired-use-ls-dired t)
+(setq dired-listing-switches "-al --group-directories-first")
+#+end_src
 
 * Basic Configuration
 ** Early Init
@@ -2211,6 +2216,7 @@ to anything user-defined. Let’s all-the-iconify this!
 (use-package visual-fill-column
   :hook (org-mode . dqv/org-mode-visual-fill))
 #+end_src
+
 *** Misc
 :PROPERTIES:
 :CUSTOM_ID: Packages-Configuration-Org-mode-Misc-l202k9z0l4j0
@@ -2245,6 +2251,22 @@ to anything user-defined. Let’s all-the-iconify this!
   :defer t
   :after org
   :straight (:build t :type git :host github :repo "zaeph/org-roll"))
+#+end_src
+
+*** Gcal
+#+begin_src emacs-lisp
+(setq plstore-cache-passphrase-for-symmetric-encryption t)
+
+(use-package org-gcal
+  :straight (:build t))
+
+(setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
+      org-gcal-client-secret "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"
+      org-gcal-fetch-file-alist '(("vugomars@gmail.com" .  "~/Dropbox/Org/Personal.org")
+                                  ("s46oeu2bmec42u0npm837dcmuk@group.calendar.google.com" .  "~/Dropbox/Org/Study.org")
+                                  ("b3b6cb234ff0c1bfc2936d5fbb366d24768491cf1ae1750828c14bef6c24494e@group.calendar.google.com" .  "~/Dropbox/Org/Training.org")
+                                  ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
+                                  ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
 #+end_src
 
 * Packages Configuration
@@ -2302,39 +2324,39 @@ Declaring all the icons for the variable
 ~company-box-icons-all-the-icons~ is quite verbose in Elisp, so I do it
 with an org-table.
 #+name: company-box-icons
-| Type          | Icon                   | Color  |
-|---------------+------------------------+--------|
+| Type          | Icon                     | Color  |
+|---------------+--------------------------+--------|
 | Unknown       | find_in_page             | purple |
-| Text          | text_fields             | green  |
-| Method        | functions              | red    |
-| Function      | functions              | red    |
-| Constructor   | functions              | red    |
-| Field         | functions              | red    |
-| Variable      | adjust                 | blue   |
-| Class         | class                  | red    |
+| Text          | text_fields              | green  |
+| Method        | functions                | red    |
+| Function      | functions                | red    |
+| Constructor   | functions                | red    |
+| Field         | functions                | red    |
+| Variable      | adjust                   | blue   |
+| Class         | class                    | red    |
 | Interface     | settings_input_component | red    |
-| Module        | view_module             | red    |
-| Property      | settings               | red    |
-| Unit          | straighten             | red    |
-| Value         | filter_1                | red    |
-| Enum          | plus_one                | red    |
+| Module        | view_module              | red    |
+| Property      | settings                 | red    |
+| Unit          | straighten               | red    |
+| Value         | filter_1                 | red    |
+| Enum          | plus_one                 | red    |
 | Keyword       | filter_center_focus      | red    |
-| Snippet       | short_text              | red    |
-| Color         | color_lens              | red    |
+| Snippet       | short_text               | red    |
+| Color         | color_lens               | red    |
 | File          | insert_drive_file        | red    |
-| Reference     | collections_bookmark    | red    |
-| Folder        | folder                 | red    |
-| EnumMember    | people                 | red    |
+| Reference     | collections_bookmark     | red    |
+| Folder        | folder                   | red    |
+| EnumMember    | people                   | red    |
 | Constant      | pause_circle_filled      | red    |
-| Struct        | streetview             | red    |
-| Event         | event                  | red    |
-| Operator      | control_point           | red    |
-| TypeParameter | class                  | red    |
-| Template      | short_text              | green  |
-| ElispFunction | functions              | red    |
-| ElispVariable | check_circle            | blue   |
-| ElispFeature  | stars                  | orange |
-| ElispFace     | format_paint            | pink   |
+| Struct        | streetview               | red    |
+| Event         | event                    | red    |
+| Operator      | control_point            | red    |
+| TypeParameter | class                    | red    |
+| Template      | short_text               | green  |
+| ElispFunction | functions                | red    |
+| ElispVariable | check_circle             | blue   |
+| ElispFeature  | stars                    | orange |
+| ElispFace     | format_paint             | pink   |
 
 #+name: gen-company-box-icons
 #+headers: :tangle no :noweb yes :exports none :cache yes
@@ -6195,6 +6217,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   <<general-keybindings-gen(table=keybinds-windows, prefix="w")>>
 
   <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
+  <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6403,6 +6426,21 @@ A couple of keybinds are hidden from which-key, otherwise there’s not much to 
 | w   |                               | writeroom   |
 | w.  | writeroom-buffer-width/body   |             |
 | ww  | writeroom-mode                |             |
+
+** Org Gcal
+Why would I ever use any of these keybinds? They are prefixed with ~a~.
+#+name: keybinds-gcal
+| Key | Function                 | Description |
+|-----+--------------------------+-------------|
+|     |                          | quit        |
+| gp  | org-gcal-post-at-point   |             |
+| gs  | org-gcal-sync            |             |
+| gS  | org-gcal-sync-buffer     |             |
+| gf  | org-gcal-fetch           |             |
+| gF  | org-gcal-fetch-buffer    |             |
+| gd  | org-gcal-delete-at-point |             |
+| gr  | org-gcal-request-token   |             |
+| gt  | org-gcal-toggle-debug    |             |
 
 ** Quit
 Why would I ever use any of these keybinds? They are prefixed with ~q~.

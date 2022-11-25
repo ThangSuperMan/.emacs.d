@@ -33,6 +33,9 @@
 
 (customize-set-variable 'epg-pinentry-mode 'loopback)
 
+(setq insert-directory-program "gls" dired-use-ls-dired t)
+(setq dired-listing-switches "-al --group-directories-first")
+
   ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
   (setq user-emacs-directory (expand-file-name "~/.emacs.d/")
         url-history-file (expand-file-name "url/history" user-emacs-directory))
@@ -1279,6 +1282,19 @@ the value `split-window-right', then it will be changed to
   :defer t
   :after org
   :straight (:build t :type git :host github :repo "zaeph/org-roll"))
+
+(setq plstore-cache-passphrase-for-symmetric-encryption t)
+
+(use-package org-gcal
+  :straight (:build t))
+
+(setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
+      org-gcal-client-secret "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"
+      org-gcal-fetch-file-alist '(("vugomars@gmail.com" .  "~/Dropbox/Org/Personal.org")
+                                  ("s46oeu2bmec42u0npm837dcmuk@group.calendar.google.com" .  "~/Dropbox/Org/Study.org")
+                                  ("b3b6cb234ff0c1bfc2936d5fbb366d24768491cf1ae1750828c14bef6c24494e@group.calendar.google.com" .  "~/Dropbox/Org/Training.org")
+                                  ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
+                                  ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
 
 (use-package company
   :straight (:build t)
@@ -4193,6 +4209,15 @@ Spell Commands^^           Add To Dictionary^^              Other
   "qf" #'delete-frame
   "qq" #'save-buffers-kill-terminal
   "qQ" #'kill-emacs
+  "a" '(:ignore t :wk "quit")
+  "agp" #'org-gcal-post-at-point
+  "ags" #'org-gcal-sync
+  "agS" #'org-gcal-sync-buffer
+  "agf" #'org-gcal-fetch
+  "agF" #'org-gcal-fetch-buffer
+  "agd" #'org-gcal-delete-at-point
+  "agr" #'org-gcal-request-token
+  "agt" #'org-gcal-toggle-debug
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
