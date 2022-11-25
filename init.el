@@ -192,6 +192,24 @@ the user."
            (unless (string= "-" project-name)
              (format (if (buffer-modified-p) " ◉ %s" "  ●  %s - Emacs") project-name))))))
 
+;; Use moody for the mode bar
+(use-package moody
+  :straight (:build t)
+  :config
+  (setq x-underline-at-descent-line t)
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-vc-mode))
+
+(use-package minions
+  :straight (:build t)
+  :config
+  (setq minions-mode-line-lighter ""
+        minions-mode-line-delimiters '("" . ""))
+  (minions-mode 1))
+
+(setq evil-insert-state-cursor '((bar . 2) "yellow")
+      evil-normal-state-cursor '(box "yellow"))
+
 (defmacro csetq (&rest forms)
   "Bind each custom variable FORM to the value of its VAL.
 
@@ -889,13 +907,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
     (require 'evil-org-agenda)
     (evil-org-agenda-set-keys))
 
-  (use-package conlanging
-    :straight (conlanging :build t
-                          :type git
-                          :repo "https://labs.phundrak.com/phundrak/conlanging.el")
-    :after org
-    :defer t)
-
 (use-package org-contrib
   :after (org)
   :defer t
@@ -927,15 +938,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (add-to-list 'org-tag-alist '("TOC" . ?T))
   :hook (org-mode . toc-org-enable)
   :hook (markdown-mode . toc-org-enable))
-
-(use-package org-unique-id
-  :straight (org-unique-id :build t
-                           :type git
-                           :host github
-                           :repo "Phundrak/org-unique-id")
-  :defer t
-  :after org
-  :init (add-hook 'before-save-hook #'org-unique-id-maybe))
 
 (defun dqv/toggle-org-src-window-split ()
   "This function allows the user to toggle the behavior of
@@ -1788,11 +1790,46 @@ deactivate `magit-todos-mode', otherwise enable it."
   (shell-pop-restore-window-configuration t)
   (shell-pop-cleanup-buffer-at-process-exit t))
 
+(use-package popwin
+  :straight t)
+
+(with-eval-after-load 'popwin
+  (dqv/leader-key
+    "oe" '(+popwin:eshell :wk "Eshell popup")
+    "oE" '(eshell :wk "Eshell"))
+  (defun +popwin:eshell ()
+    (interactive)
+    (popwin:display-buffer-1
+     (or (get-buffer "*eshell*")
+         (save-window-excursion
+           (call-interactively 'eshell)))
+     :default-config-keywords '(:position :bottom :height 14))))
+
 (use-package vterm
   :defer t
   :straight t
+  :general
+  (dqv/leader-key
+   "ot" '(+popwin:vterm :wk "vTerm popup")
+   "oT" '(vterm :wk "vTerm"))
+  :preface
+  (when noninteractive
+    (advice-add #'vterm-module-compile :override #'ignore)
+    (provide 'vterm-module))
+  :custom
+  (vterm-max-scrollback 5000)
   :config
-  (setq vterm-shell "/usr/bin/fish"))
+  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
+  (setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-max-scrollback 10000)
+  (with-eval-after-load 'popwin
+    (defun +popwin:vterm ()
+      (interactive)
+      (popwin:display-buffer-1
+       (or (get-buffer "*vterm*")
+           (save-window-excursion
+             (call-interactively 'vterm)))
+       :default-config-keywords '(:position :bottom :height 14)))))
 
 (use-package multi-vterm
   :after vterm

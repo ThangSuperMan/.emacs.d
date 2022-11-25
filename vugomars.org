@@ -243,52 +243,14 @@ Lastly, I want the default mode for Emacs to be Emacs Lisp.
 #+end_src
 
 **** Indentation
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Editing-Text-in-Emacs-Indentationauiiel6184j0
-:END:
-I don’t like tabs. They rarely look good, and if I need it I can
-almost always tell Emacs to use them through a ~.dir-locals.el~ file or
-through the config file of my code formatter. So by default, let’s
-disable them:
+I don’t like tabs. They rarely look good, and if I need it I can almost always tell Emacs to use them through a ~.dir-locals.el~ file or through the config file of my code formatter.
 #+begin_src emacs-lisp
 (setq-default indent-tabs-mode nil)
 (add-hook 'prog-mode-hook (lambda () (setq indent-tabs-mode nil)))
 #+end_src
 
-Just to go on a little tangent here: I don’t exactly /hate/ tabs, but I
-find them really annoying when your text editor knows only them. Sure,
-for indentation they work great, and they allow different people
-getting different settings in their text editor depending on their
-preferred tastes —some may prefer 2 spaces tabs, some may prefer 4
-spaces tabs, some deranged people prefer 8 spaces tabs, and some
-monsters prefer 3!
-
-But the thing is, once you indented your code and then you need
-alignment, tabs don’t work anymore! Or they may on *your* text editor
-but not on your coworker’s! (He’s the one using 3 spaces tabs by the
-way).
-
-So, is the answer to use spaces instead of tabs, and screw peoples’
-preferences in terms of tabs width? No, I say the answer is more
-moderate than that, and it might frighten or anger some of you at
-first: use both spaces and tabs. Now, before you lynch me on the main
-avenue in front of everyone, let me tell you absolutely no one should
-ever be mixing spaces and tabs for indentation, that would be
-absolutely terrible and would bring the worst of both worlds. What’s
-the best of both worlds then?
-#+begin_center
-/Tabs for indentation/
-
-/Spaces for alignment/
-#+end_center
-
-I haven’t found a way to automate that in Emacs yet aside from
-formatters’ config file, and tabs look bat in EmacsLisp anyway, so
-I’ll stick with spaces by default and change it where needed.
-
 *** Programming Modes
-First off, my definition of what makes a “programming mode” doesn’t exactly
-fit mine, so on top of ~prog-mode~, let’s add a few other modes.
+First off, my definition of what makes a “programming mode” doesn’t exactly fit mine, so on top of ~prog-mode~, let’s add a few other modes.
 #+name: line-number-modes-table
 | Modes      |
 |------------|
@@ -304,9 +266,7 @@ fit mine, so on top of ~prog-mode~, let’s add a few other modes.
 #+end_src
 
 **** Line Number
-Since version 26, Emacs has a built-in capacity of displaying line
-numbers on the left-side of the buffer. This is a fantastic feature
-that should actually be the default for all programming modes.
+Since version 26, Emacs has a built-in capacity of displaying line numbers on the left-side of the buffer. This is a fantastic feature that should actually be the default for all programming modes.
 
 #+begin_src emacs-lisp
 (dolist (mode '(<<prog-modes-gen()>>))
@@ -314,9 +274,6 @@ that should actually be the default for all programming modes.
 #+end_src
 
 **** Folding code
-:PROPERTIES:
-:CUSTOM_ID: Basic-configuration-Emacs-Behavior-Programming-Modes-Folding-code16uiel6184j0
-:END:
 Most programming languages can usually have their code folded, be it code between curly braces, chunks of comments or code on another level of indentation (Python, why…?). The minor-mode that enables that is ~hs-minor-mode~, let’s enable it for all of these programming modes:
 #+begin_src emacs-lisp
 (dolist (mode '(<<prog-modes-gen()>>))
@@ -547,6 +504,33 @@ This is straight-up copied from [[https://tecosaur.github.io/emacs-config/config
              (format (if (buffer-modified-p) " ◉ %s" "  ●  %s - Emacs") project-name))))))
 #+end_src
 
+*** Moody
+#+begin_src emacs-lisp
+;; Use moody for the mode bar
+(use-package moody
+  :straight (:build t)
+  :config
+  (setq x-underline-at-descent-line t)
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-vc-mode))
+#+end_src
+
+*** Monions
+#+begin_src emacs-lisp
+(use-package minions
+  :straight (:build t)
+  :config
+  (setq minions-mode-line-lighter ""
+        minions-mode-line-delimiters '("" . ""))
+  (minions-mode 1))
+#+end_src
+
+*** Cursor
+#+begin_src emacs-lisp
+(setq evil-insert-state-cursor '((bar . 2) "yellow")
+      evil-normal-state-cursor '(box "yellow"))
+#+end_src
+
 ** A better custom variable setter
 Something people often forget about custom variables in Elisp is they can have a custom setter that will run some code if we set the variable properly with ~customize-set-variable~, so ~setq~ shouldn’t be the user’s choice by default. But repeatedly writing ~customize-set-variable~ can get tiring and boring. So why not take the best of both world and create ~csetq~, a ~setq~ that uses ~customize-set-variable~ under the hood while it keeps a syntax similar to the one ~setq~ uses?
 #+begin_src emacs-lisp
@@ -687,7 +671,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
     (dolist (elt elements return)
       (setq return (add-to-list list-var elt append compare-fn)))))
 #+end_src
-
 
 * Keybinding Management
 ** Which-key
@@ -1019,6 +1002,7 @@ transparency.
         (delq (current-buffer)
               (remove-if-not 'buffer-file-name (buffer-list)))))
 #+end_src
+
 * Org-mode
 *** Citeproc
 Since recently, in order to make ~org-cite~ compile properly, we need
@@ -1113,11 +1097,7 @@ Org is the main reason I am using Emacs. It is an extremely powerfu tool when yo
 #+end_src
 
 *** Evil Org
-The main feature from ~evil-org~ that I love is how easy it is to modify
-some keybindings for keyboards layouts that do not have ~hjkl~, such as
-the bépo layout (or Dvorak or Colemak if you are into that). But it
-also adds a ton of default keybindings which are just much more
-comfortable than the default ones you get with evil and org naked.
+The main feature from ~evil-org~ that I love is how easy it is to modify some keybindings for keyboards layouts that do not have ~hjkl~, such as the bépo layout (or Dvorak or Colemak if you are into that). But it also adds a ton of default keybindings which are just much more comfortable than the default ones you get with evil and org naked.
 #+begin_src emacs-lisp
   (use-package evil-org
     :straight (:build t)
@@ -1134,25 +1114,8 @@ comfortable than the default ones you get with evil and org naked.
     (evil-org-agenda-set-keys))
 #+end_src
 
-*** Conlanging
-This package is a small package I’ve written that helps me when
-writing conlanging documents, with features such as creating syntax
-trees, converting translitterated text to its native script, etc…
-#+begin_src emacs-lisp
-  (use-package conlanging
-    :straight (conlanging :build t
-                          :type git
-                          :repo "https://labs.phundrak.com/phundrak/conlanging.el")
-    :after org
-    :defer t)
-#+end_src
-
 *** Contrib
-Since very recently, the ~contrib/lisp/~ directory of org moved out of
-the main repository to [[https://git.sr.ht/~bzg/org-contrib][this repository]]. On the other hand,
-~contrib/scripts/~ moved to [[https://code.orgmode.org/bzg/worg/src/master/code][the worg repository]], but I don’t need
-it. The main reason I want ~org-contrib~ is due to ~ox-extra~ that allow
-the usage of the ~:ignore:~ tag in org.
+Since very recently, the ~contrib/lisp/~ directory of org moved out of the main repository to [[https://git.sr.ht/~bzg/org-contrib][this repository]]. On the other hand, ~contrib/scripts/~ moved to [[https://code.orgmode.org/bzg/worg/src/master/code][the worg repository]], but I don’t need it. The main reason I want ~org-contrib~ is due to ~ox-extra~ that allow the usage of the ~:ignore:~ tag in org.
 #+begin_src emacs-lisp
 (use-package org-contrib
   :after (org)
@@ -1164,19 +1127,12 @@ the usage of the ~:ignore:~ tag in org.
 #+end_src
 
 *** Agenda
-:PROPERTIES:
-:header-args:emacs-lisp: :tangle no :exports code :results silent
-:CUSTOM_ID: Packages-Configuration-Org-mode-Agenda8b55fl6184j0
-:END:
 #+name: org-agenda-files
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle no :exports code :results silent
 (setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/"))
 #+end_src
 
 *** Babel
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Babel9585fl6184j0
-:END:
 One of the amazing features of org-mode is its literary programming capacities
 by running code blocks from within Org-mode itself. But for that, only a couple
 of languages are supported directly by Org-mode itself, and they need to be
@@ -1279,19 +1235,6 @@ for org files that will be hosted and viewable on Github.
 (add-hook 'org-mode-hook (lambda ()
                            (interactive)
                            (electric-indent-local-mode -1)))
-#+end_src
-
-As explained in my [[https://blog.phundrak.com/better-custom-ids-orgmode/][blog post]], org-mode is terrible with coming up with
-meaningful IDs for its headings. I actually wrote a package for this!
-#+begin_src emacs-lisp
-(use-package org-unique-id
-  :straight (org-unique-id :build t
-                           :type git
-                           :host github
-                           :repo "Phundrak/org-unique-id")
-  :defer t
-  :after org
-  :init (add-hook 'before-save-hook #'org-unique-id-maybe))
 #+end_src
 
 *** Capture
@@ -3133,23 +3076,51 @@ buffer.
 #+end_src
 
 **** VTerm
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Shells-VTermzfh1fl6184j0
-:END:
-VTerm gives Emacs access to regular shells with an almost regular
-emulator. Be aware you will most likely need to hit ~C-c~ twice to send
-an interrupt signal.
+VTerm gives Emacs access to regular shells with an almost regular emulator. Be aware you will most likely need to hit ~C-c~ twice to send an interrupt signal.
 #+begin_src emacs-lisp
+(use-package popwin
+  :straight t)
+
+(with-eval-after-load 'popwin
+  (dqv/leader-key
+    "oe" '(+popwin:eshell :wk "Eshell popup")
+    "oE" '(eshell :wk "Eshell"))
+  (defun +popwin:eshell ()
+    (interactive)
+    (popwin:display-buffer-1
+     (or (get-buffer "*eshell*")
+         (save-window-excursion
+           (call-interactively 'eshell)))
+     :default-config-keywords '(:position :bottom :height 14))))
+
 (use-package vterm
   :defer t
   :straight t
+  :general
+  (dqv/leader-key
+   "ot" '(+popwin:vterm :wk "vTerm popup")
+   "oT" '(vterm :wk "vTerm"))
+  :preface
+  (when noninteractive
+    (advice-add #'vterm-module-compile :override #'ignore)
+    (provide 'vterm-module))
+  :custom
+  (vterm-max-scrollback 5000)
   :config
-  (setq vterm-shell "/usr/bin/fish"))
+  (setq term-prompt-regexp "^[^#$%>\n]*[#$%>] *")  ;; Set this to match your custom shell prompt
+  (setq vterm-shell "zsh")                       ;; Set this to customize the shell to launch
+  (setq vterm-max-scrollback 10000)
+  (with-eval-after-load 'popwin
+    (defun +popwin:vterm ()
+      (interactive)
+      (popwin:display-buffer-1
+       (or (get-buffer "*vterm*")
+           (save-window-excursion
+             (call-interactively 'vterm)))
+       :default-config-keywords '(:position :bottom :height 14)))))
 #+end_src
 
-One annoying think with vterm is it only can create one buffer, you
-can’t have multiple vterm buffers by default. ~multi-vterm~ fixes this
-issue.
+One annoying think with vterm is it only can create one buffer, you can’t have multiple vterm buffers by default. ~multi-vterm~ fixes this issue.
 #+begin_src emacs-lisp
 (use-package multi-vterm
   :after vterm
