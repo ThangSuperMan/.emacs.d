@@ -18,3 +18,10 @@
 /.org-generic-id-locations
 /.lsp-session-v1
 /early-init.el
+/var/
+/request/
+/places
+/oauth2-auto.plist
+/history
+/eshell/
+/.dap-breakpoints
