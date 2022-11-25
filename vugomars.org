@@ -1,4 +1,7 @@
 #+title: Emacs Configuration
+#+AUTHOR: =Dang Quang Vu=
+#+EMAIL: vugomars@gmail.com
+#+SUBTITLE: Emacs configuration for work and life
 #+setupfile: headers
 #+html_head: <meta name="description" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:title" content="Vugomars' Emacs" />
@@ -6,6 +9,77 @@
 #+property: header-args:emacs-lisp  :mkdirp yes :lexical t :exports code
 #+property: header-args:emacs-lisp+ :tangle ./init.el
 #+property: header-args:emacs-lisp+ :mkdirp yes :noweb no-export
+#+options: title:t author:t email:t toc:t date:t tags:nil
+#+startup: fold noindent
+#+OPTIONS: toc:nil h:4
+#+STARTUP: showeverything
+#+latex_compiler: xelatex
+
+#+TOC: headlines 4
+
+* Table Of Contents :TOC:
+- [[#introduction][Introduction]]
+- [[#package-management][Package Management]]
+  - [[#repositories][Repositories]]
+  - [[#straight][Straight]]
+  - [[#auth][Auth]]
+- [[#basic-configuration][Basic Configuration]]
+  - [[#early-init][Early Init]]
+  - [[#emacs-behavior][Emacs Behavior]]
+  - [[#personal-information][Personal Information]]
+  - [[#visual-configuration][Visual Configuration]]
+  - [[#a-better-custom-variable-setter][A better custom variable setter]]
+- [[#custom-elisp][Custom Elisp]]
+  - [[#load-paths][Load-paths]]
+  - [[#dired-functions][Dired functions]]
+  - [[#switch-between-buffers][Switch between buffers]]
+  - [[#screenshots][Screenshots]]
+  - [[#handle-new-windows][Handle new windows]]
+  - [[#extend-add-to-list][Extend ~add-to-list~]]
+  - [[#scroll-page][Scroll page]]
+  - [[#switch-to-previous-buffer][Switch to previous buffer]]
+  - [[#move-to-beginning-of-live][Move to beginning of live]]
+  - [[#go-to-match-paren][Go to match paren]]
+  - [[#delete-this-file][Delete This File]]
+  - [[#kill-all-the-buffer][Kill all the buffer]]
+- [[#keybinding-management][Keybinding Management]]
+  - [[#which-key][Which-key]]
+  - [[#general][General]]
+  - [[#evil][Evil]]
+  - [[#hydra][Hydra]]
+- [[#function-decleration][Function Decleration]]
+  - [[#kill-other-buffer][Kill Other Buffer]]
+- [[#org-mode][Org-mode]]
+- [[#packages-configuration][Packages Configuration]]
+  - [[#autocompletion][Autocompletion]]
+  - [[#applications][Applications]]
+  - [[#editing][Editing]]
+  - [[#emacs-built-ins][Emacs built-ins]]
+  - [[#making-my-life-easier][Making my life easier]]
+  - [[#latex][LaTeX]]
+  - [[#programming][Programming]]
+  - [[#visual-configuration-1][Visual Configuration]]
+  - [[#misc][Misc]]
+- [[#keybindings][Keybindings]]
+  - [[#apps][Apps]]
+  - [[#buffers][Buffers]]
+  - [[#errors][Errors]]
+  - [[#files][Files]]
+  - [[#help][Help]]
+  - [[#project][Project]]
+  - [[#text][Text]]
+  - [[#toggles][Toggles]]
+  - [[#windows][Windows]]
+  - [[#org-gcal][Org Gcal]]
+  - [[#org-roam][Org Roam]]
+  - [[#quit][Quit]]
+
+* Introduction
+- After a couple year using =Doom Emacs=, i'm finally switching back to a vanilla configuration! Because i got tired some framework getting in my way when i wanted to do stuff. I'm sure this is more applicable to =Doom Emacs= since the letter has nice macros written so easily add new packages and configure them.
+
+#+begin_quote
+Emacs is everything i need for a Good =text editor=.
+#+end_quote
 
 * Package Management
 ** Repositories
@@ -197,7 +271,6 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 
 ;; Show line and column numbers (cursor position) in mode-line
 (line-number-mode 1)
-(column-number-mode 1)
 
 ;; Wrap long lines
 (global-visual-line-mode 1)
@@ -418,6 +491,16 @@ Something my taskbar doesn’t have is a battery indicator. However, I want it e
 This isn’t a modeline module per se, but we have an indicator of the current line in Emacs. And although it is useful, I also often wish to know which column I’m on. This can be activated like so:
 #+begin_src emacs-lisp
 (column-number-mode)
+
+;; Enable line numbers for some modes
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+;; Override some modes which derive from the above
+(dolist (mode '(org-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 #+end_src
 
 The following code is, as will several chunks of code in this config, borrowed from [[https://tecosaur.github.io/emacs-config/#theme-modeline][TEC’s configuration]]. It hides the encoding information of the file if the file itself is a regular UTF-8 file with ~\n~ line ending. Be aware the ~doom-modeline-buffer-encoding~ variable is usabel here only because I use the Doom modeline as seen below.
@@ -684,6 +767,98 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (let (return)
     (dolist (elt elements return)
       (setq return (add-to-list list-var elt append compare-fn)))))
+#+end_src
+
+** Scroll page
+#+begin_src emacs-lisp
+(defun scroll-half-page-up ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-down ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+#+end_src
+
+** Switch to previous buffer
+#+begin_src emacs-lisp
+  (defun dqv/switch-to-previous-buffer ()
+    "Switch to previously open buffer.
+        Repeated invocations toggle between the two most recently open buffers."
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+#+end_src
+
+** Move to beginning of live
+#+begin_src emacs-lisp
+ (defun my-smarter-move-beginning-of-line (arg)
+   "Move point back to indentation of beginning of line.
+
+        Move point to the first non-whitespace character on this line.
+        If point is already there, move to the beginning of the line.
+        Effectively toggle between the first non-whitespace character and
+        the beginning of the line.
+
+        If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+        point reaches the beginning or end of the buffer, stop there."
+   (interactive "^p")
+   (setq arg (or arg 1))
+
+   ;; Move lines first
+   (when (/= arg 1)
+     (let ((line-move-visual nil))
+        (forward-line (1- arg))))
+
+   (let ((orig-point (point)))
+     (back-to-indentation)
+     (when (= orig-point (point))
+        (move-beginning-of-line 1))))
+
+ ;; remap C-a to `smarter-move-beginning-of-line'
+
+ (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
+#+end_src
+
+** Go to match paren
+#+begin_src emacs-lisp
+(defun dqv/goto-match-paren (arg)
+  "Go to the matching if on (){}[], similar to vi style of % ."
+  (interactive "p")
+  (cond ((looking-at "[\[\(\{]") (evil-jump-item))
+        ((looking-back "[\]\)\}]" 1) (evil-jump-item))
+        ((looking-at "[\]\)\}]") (forward-char) (evil-jump-item))
+        ((looking-back "[\[\(\{]" 1) (backward-char) (evil-jump-item))
+        (t nil)))
+  (global-set-key (kbd "s-;") #'dqv/goto-match-paren)
+#+end_src
+
+** Delete This File
+#+begin_src emacs-lisp
+(defun dqv/delete-this-file (&optional trash)
+  "Delete this file.
+
+When called interactively, TRASH is t if no prefix argument is given.
+With a prefix argument, TRASH is nil."
+  (interactive)
+  (when (and (called-interactively-p 'interactive)
+             (not current-prefix-arg))
+    (setq trash t))
+  (if-let ((file (buffer-file-name)))
+      (when (y-or-n-p "Delete this file? ")
+        (delete-file file trash)
+        (kill-buffer (current-buffer)))
+    (user-error "Current buffer is not visiting a file")))
+#+end_src
+
+** Kill all the buffer
+#+begin_src emacs-lisp
+    (defun dqv/kill-other-buffers ()
+      "Kill all other buffers."
+      (interactive)
+      (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 #+end_src
 
 * Keybinding Management
@@ -3340,18 +3515,6 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
 (use-package string-edit-at-point
   :defer t
   :straight (:build t))
-#+end_src
-
-*** Writeroom
-On the other hand, ~writeroom~ allows the user to enter a distraction-free mode of Emacs, and I like that! But the default width is a bit too small for me, and I prefer not to go fullscren.
-#+begin_src emacs-lisp
-(use-package writeroom-mode
-  :defer t
-  :straight (:build t)
-  :init (global-writeroom-mode 1)
-  :config
-  (setq writeroom-mode-line         t
-        writeroom-major-modes       '(text-mode org-mode markdown-mode nov-mode Info-mode)))
 #+end_src
 
 *** Maple-iedit
@@ -6184,18 +6347,20 @@ Winum allows Emacs to associate windows with a specific number and navigate thro
 * Keybindings
 Undefining some stuff to make keybind prefixes work correctly.
 #+begin_src emacs-lisp
-(general-define-key
- :keymaps 'global-map
- "<mouse-2>" nil
- "<mouse-3>" nil)
+(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
+(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
+  (general-define-key
+   :keymaps 'global-map
+   "<mouse-2>" nil
+   "<mouse-3>" nil)
 
-(dqv/evil
-  :packages '(counsel)
-  "U"   #'evil-redo
-  "C-a" #'beginning-of-line
-  "C-e" #'end-of-line
-  "C-y" #'yank
-  "M-y" #'counsel-yank-pop)
+  (dqv/evil
+    :packages '(counsel)
+    "U"   #'evil-redo
+    "C-a" #'beginning-of-line
+    "C-e" #'end-of-line
+    "C-y" #'yank
+    "M-y" #'counsel-yank-pop)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -6205,6 +6370,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
+  "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
 
   <<general-keybindings-gen(table=keybinds-apps, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-apps-shell, prefix="as")>>
@@ -6321,6 +6487,7 @@ My keybinds for file manipulation are prefixed by ~f~.
 |-----+----------------------+-------------|
 |     |                      | files       |
 | f   | counsel-find-file    |             |
+| D   | dqv/delete-this-file |             |
 | F   | ivy-quick-find-files |             |
 | h   | hexl-find-file       |             |
 | r   | counsel-recentf      |             |

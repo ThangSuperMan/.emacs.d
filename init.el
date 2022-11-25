@@ -121,6 +121,16 @@
 
 (column-number-mode)
 
+;; Enable line numbers for some modes
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+;; Override some modes which derive from the above
+(dolist (mode '(org-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
 (defun modeline-contitional-buffer-encoding ()
   "Hide \"LF UTF-8\" in modeline.
 
@@ -321,6 +331,79 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (let (return)
     (dolist (elt elements return)
       (setq return (add-to-list list-var elt append compare-fn)))))
+
+(defun scroll-half-page-up ()
+  "scroll down half the page"
+  (interactive)
+  (scroll-down (/ (window-body-height) 2)))
+
+(defun scroll-half-page-down ()
+  "scroll up half the page"
+  (interactive)
+  (scroll-up (/ (window-body-height) 2)))
+
+  (defun dqv/switch-to-previous-buffer ()
+    "Switch to previously open buffer.
+        Repeated invocations toggle between the two most recently open buffers."
+    (interactive)
+    (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+ (defun my-smarter-move-beginning-of-line (arg)
+   "Move point back to indentation of beginning of line.
+
+        Move point to the first non-whitespace character on this line.
+        If point is already there, move to the beginning of the line.
+        Effectively toggle between the first non-whitespace character and
+        the beginning of the line.
+
+        If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+        point reaches the beginning or end of the buffer, stop there."
+   (interactive "^p")
+   (setq arg (or arg 1))
+
+   ;; Move lines first
+   (when (/= arg 1)
+     (let ((line-move-visual nil))
+        (forward-line (1- arg))))
+
+   (let ((orig-point (point)))
+     (back-to-indentation)
+     (when (= orig-point (point))
+        (move-beginning-of-line 1))))
+
+ ;; remap C-a to `smarter-move-beginning-of-line'
+
+ (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
+
+(defun dqv/goto-match-paren (arg)
+  "Go to the matching if on (){}[], similar to vi style of % ."
+  (interactive "p")
+  (cond ((looking-at "[\[\(\{]") (evil-jump-item))
+        ((looking-back "[\]\)\}]" 1) (evil-jump-item))
+        ((looking-at "[\]\)\}]") (forward-char) (evil-jump-item))
+        ((looking-back "[\[\(\{]" 1) (backward-char) (evil-jump-item))
+        (t nil)))
+  (global-set-key (kbd "s-;") #'dqv/goto-match-paren)
+
+(defun dqv/delete-this-file (&optional trash)
+  "Delete this file.
+
+When called interactively, TRASH is t if no prefix argument is given.
+With a prefix argument, TRASH is nil."
+  (interactive)
+  (when (and (called-interactively-p 'interactive)
+             (not current-prefix-arg))
+    (setq trash t))
+  (if-let ((file (buffer-file-name)))
+      (when (y-or-n-p "Delete this file? ")
+        (delete-file file trash)
+        (kill-buffer (current-buffer)))
+    (user-error "Current buffer is not visiting a file")))
+
+    (defun dqv/kill-other-buffers ()
+      "Kill all other buffers."
+      (interactive)
+      (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
 (use-package which-key
   :straight (:build t)
@@ -2015,14 +2098,6 @@ deactivate `magit-todos-mode', otherwise enable it."
 (use-package string-edit-at-point
   :defer t
   :straight (:build t))
-
-(use-package writeroom-mode
-  :defer t
-  :straight (:build t)
-  :init (global-writeroom-mode 1)
-  :config
-  (setq writeroom-mode-line         t
-        writeroom-major-modes       '(text-mode org-mode markdown-mode nov-mode Info-mode)))
 
 (use-package maple-iedit
   :ensure nil
@@ -4040,18 +4115,20 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :init (winum-mode))
 
-(general-define-key
- :keymaps 'global-map
- "<mouse-2>" nil
- "<mouse-3>" nil)
+(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
+(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
+  (general-define-key
+   :keymaps 'global-map
+   "<mouse-2>" nil
+   "<mouse-3>" nil)
 
-(dqv/evil
-  :packages '(counsel)
-  "U"   #'evil-redo
-  "C-a" #'beginning-of-line
-  "C-e" #'end-of-line
-  "C-y" #'yank
-  "M-y" #'counsel-yank-pop)
+  (dqv/evil
+    :packages '(counsel)
+    "U"   #'evil-redo
+    "C-a" #'beginning-of-line
+    "C-e" #'end-of-line
+    "C-y" #'yank
+    "M-y" #'counsel-yank-pop)
 
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
@@ -4059,6 +4136,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
+  "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
 
   "a" '(:ignore t :wk "apps")
   "ac" #'calc
@@ -4146,6 +4224,7 @@ Spell Commands^^           Add To Dictionary^^              Other
 
   "f" '(:ignore t :wk "files")
   "ff" #'counsel-find-file
+  "fD" #'dqv/delete-this-file
   "fF" #'ivy-quick-find-files
   "fh" #'hexl-find-file
   "fr" #'counsel-recentf
