@@ -60,6 +60,21 @@ We finally come to the ~use-package~ installation. This is done like so:
 (setq use-package-always-ensure t)
 #+end_src
 
+** Auth
++ This uses ~pass~ for all auth storage. if there are problems remember ~(setq auth-source-debug t)~
+#+begin_src emacs-lisp
+(auth-source-pass-enable)
+#+end_src
++ Let Emacs query the pass phrase instead of an external pinentry dialogue
+#+begin_src emacs-lisp
+(customize-set-variable 'epg-pinentry-mode 'loopback)
+#+end_src
++ Access Folder
+#+begin_src emacs-lisp
+(setq insert-directory-program "gls" dired-use-ls-dired t)
+(setq dired-listing-switches "-al --group-directories-first")
+#+end_src
+
 * Basic Configuration
 ** Early Init
 The early init file is the file loaded before anything else in Emacs. This is where I put some options in order to disable as quickly as possible some built-in features of Emacs before they can be even loaded, speeding Emacs up a bit.
@@ -112,7 +127,7 @@ The early init file is the file loaded before anything else in Emacs. This is wh
       whitespace-action '(cleanup auto-cleanup))
 
 (setq-default truncate-lines nil
-              fill-column 80
+              fill-column 140
               indent-tabs-mode nil
               display-line-numbers-width 3
               tab-width 2)
@@ -738,11 +753,8 @@ General is an awesome package for managing keybindings. Not only is it oriented 
 #+end_src
 
 ** Evil
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Eviljg30fl6184j0
-:END:
-Evil emulates most of vim’s keybinds, because let’s be honest here,
-they are much more comfortable than Emacs’.
+*** Evil
+Evil emulates most of vim’s keybinds, because let’s be honest here, they are much more comfortable than Emacs’.
 #+begin_src emacs-lisp
 (use-package evil
   :straight (:build t)
@@ -763,10 +775,8 @@ they are much more comfortable than Emacs’.
   (evil-set-initial-state 'dashboard-mode 'normal))
 #+end_src
 
-I want to undefine some of the default keybinds of Evil because it
-does not match my workflow. Namely, I use the space key and the comma
-as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~,
-~C-e~, and ~C-y~.
+*** Evil Define Keys
+I want to undefine some of the default keybinds of Evil because it does not match my workflow. Namely, I use the space key and the comma as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~, ~C-e~, and ~C-y~.
 #+name: evil-undefine-keys
 #+begin_src emacs-lisp :tangle no
 (evil-global-set-key 'motion "j" 'evil-next-visual-line)
@@ -788,9 +798,24 @@ as leaders for my keybinds, and I’m way too used to Emacs’ ~C-t~, ~C-a~,
  "C-e" nil)
 #+end_src
 
-Something else that really bugs me is I use the bépo layout, which is
-not at all like the qwerty layout. For instance, ~hjkl~ becomes ~ctsr~.
-Thus, I need some bépo-specific changes.
+*** Surround
+#+begin_src emacs-lisp
+(use-package evil-surround
+  :straight (:build t)
+  :config
+  (global-evil-surround-mode t))
+
+(use-package evil-exchange
+  :straight (:build t)
+  :config (evil-exchange-install))
+
+(use-package evil-goggles
+  :straight (:build t)
+  :after evil
+  :config (evil-goggles-mode))
+#+end_src
+*** For Colemak-keyboard
++ Something else that really bugs me is I use the bépo layout, which is not at all like the qwerty layout. For instance, ~hjkl~ becomes ~ctsr~. Thus, I need some bépo-specific changes.
 #+name: evil-bepo
 #+begin_src emacs-lisp :tangle no
 ;; (dolist (key '("c" "C" "t" "T" "s" "S" "r" "R" "h" "H" "j" "J" "k" "K" "l" "L"))
@@ -888,9 +913,6 @@ insignificant and it’s still faster than loading a heavier file.
 #+end_src
 
 ** Hydra
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Hydra0970fl6184j0
-:END:
 [[https://github.com/abo-abo/hydra][Hydra]] is a simple menu creator for keybindings.
 #+begin_src emacs-lisp
 (use-package hydra
@@ -2194,6 +2216,7 @@ to anything user-defined. Let’s all-the-iconify this!
 (use-package visual-fill-column
   :hook (org-mode . dqv/org-mode-visual-fill))
 #+end_src
+
 *** Misc
 :PROPERTIES:
 :CUSTOM_ID: Packages-Configuration-Org-mode-Misc-l202k9z0l4j0
@@ -2230,20 +2253,52 @@ to anything user-defined. Let’s all-the-iconify this!
   :straight (:build t :type git :host github :repo "zaeph/org-roll"))
 #+end_src
 
+*** Gcal
+#+begin_src emacs-lisp
+(setq plstore-cache-passphrase-for-symmetric-encryption t)
+
+(use-package org-gcal
+  :straight (:build t))
+
+(setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
+      org-gcal-client-secret "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"
+      org-gcal-fetch-file-alist '(("vugomars@gmail.com" .  "~/Dropbox/Org/Personal.org")
+                                  ("s46oeu2bmec42u0npm837dcmuk@group.calendar.google.com" .  "~/Dropbox/Org/Study.org")
+                                  ("b3b6cb234ff0c1bfc2936d5fbb366d24768491cf1ae1750828c14bef6c24494e@group.calendar.google.com" .  "~/Dropbox/Org/Training.org")
+                                  ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
+                                  ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
+#+end_src
+
+*** Roam
+#+begin_src emacs-lisp
+(use-package org-roam
+  :ensure t
+  :hook (after-init . org-roam-mode)
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/Dropbox/Roam")
+  (org-roam-completion-everywhere t)
+  (org-roam-completion-system 'ivy)
+  (org-roam-capture-templates
+   '(("d" "default" plain
+      "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("l" "programming language" plain
+      "* Characteristics\n\n- Family: %?\n- Inspired by: \n\n* Reference:\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: Project")
+      :unnarrowed t)))
+  :config
+  (org-roam-setup))
+#+end_src
 * Packages Configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configurationije0fl6184j0
-:END:
 ** Autocompletion
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletionr8n1fl6184j0
-:END:
 *** Code Autocompletion
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletion-Code-Autocompletion4no1fl6184j0
-:END:
-Company is, in my opinion, the best autocompleting engine for Emacs,
-and it is one of the most popular if not /the/ most popular.
+Company is, in my opinion, the best autocompleting engine for Emacs, and it is one of the most popular if not /the/ most popular.
 #+begin_src emacs-lisp
 (use-package company
   :straight (:build t)
@@ -2285,39 +2340,39 @@ Declaring all the icons for the variable
 ~company-box-icons-all-the-icons~ is quite verbose in Elisp, so I do it
 with an org-table.
 #+name: company-box-icons
-| Type          | Icon                   | Color  |
-|---------------+------------------------+--------|
+| Type          | Icon                     | Color  |
+|---------------+--------------------------+--------|
 | Unknown       | find_in_page             | purple |
-| Text          | text_fields             | green  |
-| Method        | functions              | red    |
-| Function      | functions              | red    |
-| Constructor   | functions              | red    |
-| Field         | functions              | red    |
-| Variable      | adjust                 | blue   |
-| Class         | class                  | red    |
+| Text          | text_fields              | green  |
+| Method        | functions                | red    |
+| Function      | functions                | red    |
+| Constructor   | functions                | red    |
+| Field         | functions                | red    |
+| Variable      | adjust                   | blue   |
+| Class         | class                    | red    |
 | Interface     | settings_input_component | red    |
-| Module        | view_module             | red    |
-| Property      | settings               | red    |
-| Unit          | straighten             | red    |
-| Value         | filter_1                | red    |
-| Enum          | plus_one                | red    |
+| Module        | view_module              | red    |
+| Property      | settings                 | red    |
+| Unit          | straighten               | red    |
+| Value         | filter_1                 | red    |
+| Enum          | plus_one                 | red    |
 | Keyword       | filter_center_focus      | red    |
-| Snippet       | short_text              | red    |
-| Color         | color_lens              | red    |
+| Snippet       | short_text               | red    |
+| Color         | color_lens               | red    |
 | File          | insert_drive_file        | red    |
-| Reference     | collections_bookmark    | red    |
-| Folder        | folder                 | red    |
-| EnumMember    | people                 | red    |
+| Reference     | collections_bookmark     | red    |
+| Folder        | folder                   | red    |
+| EnumMember    | people                   | red    |
 | Constant      | pause_circle_filled      | red    |
-| Struct        | streetview             | red    |
-| Event         | event                  | red    |
-| Operator      | control_point           | red    |
-| TypeParameter | class                  | red    |
-| Template      | short_text              | green  |
-| ElispFunction | functions              | red    |
-| ElispVariable | check_circle            | blue   |
-| ElispFeature  | stars                  | orange |
-| ElispFace     | format_paint            | pink   |
+| Struct        | streetview               | red    |
+| Event         | event                    | red    |
+| Operator      | control_point            | red    |
+| TypeParameter | class                    | red    |
+| Template      | short_text               | green  |
+| ElispFunction | functions                | red    |
+| ElispVariable | check_circle             | blue   |
+| ElispFeature  | stars                    | orange |
+| ElispFace     | format_paint             | pink   |
 
 #+name: gen-company-box-icons
 #+headers: :tangle no :noweb yes :exports none :cache yes
@@ -6178,6 +6233,8 @@ Undefining some stuff to make keybind prefixes work correctly.
   <<general-keybindings-gen(table=keybinds-windows, prefix="w")>>
 
   <<general-keybindings-gen(table=keybinds-quit, prefix="q")>>
+  <<general-keybindings-gen(table=keybinds-gcal, prefix="a")>>
+  <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6386,6 +6443,38 @@ A couple of keybinds are hidden from which-key, otherwise there’s not much to 
 | w   |                               | writeroom   |
 | w.  | writeroom-buffer-width/body   |             |
 | ww  | writeroom-mode                |             |
+
+** Org Gcal
+Why would I ever use any of these keybinds? They are prefixed with ~a~.
+#+name: keybinds-gcal
+| Key | Function                 | Description |
+|-----+--------------------------+-------------|
+|     |                          | quit        |
+| gp  | org-gcal-post-at-point   |             |
+| gs  | org-gcal-sync            |             |
+| gS  | org-gcal-sync-buffer     |             |
+| gf  | org-gcal-fetch           |             |
+| gF  | org-gcal-fetch-buffer    |             |
+| gd  | org-gcal-delete-at-point |             |
+| gr  | org-gcal-request-token   |             |
+| gt  | org-gcal-toggle-debug    |             |
+
+** Org Roam
+They are prefixed with ~n~.
+#+name: keybinds-roam
+| Key | Function                          | Description |
+|-----+-----------------------------------+-------------|
+|     |                                   | quit        |
+| n   | org-roam-node-find                |             |
+| i   | org-roam-node-insert              |             |
+| l   | org-roam-buffer-toggle            |             |
+| ct  | org-roam-dailies-capture-today    |             |
+| cT  | org-roam-dailies-capture-tomorrow |             |
+| fd  | org-roam-dailies-find-date        |             |
+| ft  | org-roam-dailies-find-today       |             |
+| fy  | org-roam-dailies-find-yesterday   |             |
+| fr  | org-roam-dailies-find-tomorrow    |             |
+| g   | org-roam-graph                    |             |
 
 ** Quit
 Why would I ever use any of these keybinds? They are prefixed with ~q~.

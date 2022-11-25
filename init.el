@@ -29,6 +29,13 @@
 (straight-use-package '(use-package :build t))
 (setq use-package-always-ensure t)
 
+(auth-source-pass-enable)
+
+(customize-set-variable 'epg-pinentry-mode 'loopback)
+
+(setq insert-directory-program "gls" dired-use-ls-dired t)
+(setq dired-listing-switches "-al --group-directories-first")
+
   ;; Change the user-emacs-directory to keep unwanted things out of ~/.emacs.d
   (setq user-emacs-directory (expand-file-name "~/.emacs.d/")
         url-history-file (expand-file-name "url/history" user-emacs-directory))
@@ -398,6 +405,20 @@ APPEND and COMPARE-FN, see `add-to-list'."
   (setq evil-want-fine-undo t) ; more granular undo with evil
   (evil-set-initial-state 'messages-buffer-mode 'normal)
   (evil-set-initial-state 'dashboard-mode 'normal))
+
+(use-package evil-surround
+  :straight (:build t)
+  :config
+  (global-evil-surround-mode t))
+
+(use-package evil-exchange
+  :straight (:build t)
+  :config (evil-exchange-install))
+
+(use-package evil-goggles
+  :straight (:build t)
+  :after evil
+  :config (evil-goggles-mode))
 
   (use-package evil-collection
     :after evil
@@ -1261,6 +1282,43 @@ the value `split-window-right', then it will be changed to
   :defer t
   :after org
   :straight (:build t :type git :host github :repo "zaeph/org-roll"))
+
+(setq plstore-cache-passphrase-for-symmetric-encryption t)
+
+(use-package org-gcal
+  :straight (:build t))
+
+(setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
+      org-gcal-client-secret "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"
+      org-gcal-fetch-file-alist '(("vugomars@gmail.com" .  "~/Dropbox/Org/Personal.org")
+                                  ("s46oeu2bmec42u0npm837dcmuk@group.calendar.google.com" .  "~/Dropbox/Org/Study.org")
+                                  ("b3b6cb234ff0c1bfc2936d5fbb366d24768491cf1ae1750828c14bef6c24494e@group.calendar.google.com" .  "~/Dropbox/Org/Training.org")
+                                  ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
+                                  ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
+
+(use-package org-roam
+  :ensure t
+  :hook (after-init . org-roam-mode)
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/Dropbox/Roam")
+  (org-roam-completion-everywhere t)
+  (org-roam-completion-system 'ivy)
+  (org-roam-capture-templates
+   '(("d" "default" plain
+      "%?"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("l" "programming language" plain
+      "* Characteristics\n\n- Family: %?\n- Inspired by: \n\n* Reference:\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+      :unnarrowed t)
+     ("p" "project" plain "* Goals\n\n%?\n\n* Tasks\n\n** TODO Add initial tasks\n\n* Dates\n\n"
+      :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: Project")
+      :unnarrowed t)))
+  :config
+  (org-roam-setup))
 
 (use-package company
   :straight (:build t)
@@ -4175,6 +4233,26 @@ Spell Commands^^           Add To Dictionary^^              Other
   "qf" #'delete-frame
   "qq" #'save-buffers-kill-terminal
   "qQ" #'kill-emacs
+  "a" '(:ignore t :wk "quit")
+  "agp" #'org-gcal-post-at-point
+  "ags" #'org-gcal-sync
+  "agS" #'org-gcal-sync-buffer
+  "agf" #'org-gcal-fetch
+  "agF" #'org-gcal-fetch-buffer
+  "agd" #'org-gcal-delete-at-point
+  "agr" #'org-gcal-request-token
+  "agt" #'org-gcal-toggle-debug
+  "n" '(:ignore t :wk "quit")
+  "nn" #'org-roam-node-find
+  "ni" #'org-roam-node-insert
+  "nl" #'org-roam-buffer-toggle
+  "nct" #'org-roam-dailies-capture-today
+  "ncT" #'org-roam-dailies-capture-tomorrow
+  "nfd" #'org-roam-dailies-find-date
+  "nft" #'org-roam-dailies-find-today
+  "nfy" #'org-roam-dailies-find-yesterday
+  "nfr" #'org-roam-dailies-find-tomorrow
+  "ng" #'org-roam-graph
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
