@@ -18,7 +18,6 @@
 #+TOC: headlines 4
 
 * Table Of Content :TOC:
-- [[#introduction][Introduction]]
 - [[#package-management][Package Management]]
   - [[#repositories][Repositories]]
   - [[#straight][Straight]]
@@ -73,13 +72,6 @@
   - [[#org-gcal][Org Gcal]]
   - [[#org-roam][Org Roam]]
   - [[#leetcode][Leetcode]]
-
-* Introduction
-- After a couple year using =Doom Emacs=, i'm finally switching back to a vanilla configuration! Because i got tired some framework getting in my way when i wanted to do stuff. I'm sure this is more applicable to =Doom Emacs= since the letter has nice macros written so easily add new packages and configure them.
-
-#+begin_quote
-Emacs is everything i need for a Good =text editor=.
-#+end_quote
 
 * Package Management
 ** Repositories
@@ -1440,17 +1432,19 @@ Let me describe a keybind to invoke org-capture from anywhere within Emacs.
 
 When ~org-capture~ is invoked, it will ask which template we wish to use. In the table [[org-capture-shortcuts-table]], the /key/ column represents which keychord we need to hit, titled with /name/, we need to hit in order to use the /template/, inserted in the designated /file/ in the manner described by /insertion mode/.
 #+name: org-capture-shortcuts-table
-| Shortcut | Name     | Title   | Insertion mode | file              | template            |
-|----------+----------+---------+----------------+-------------------+---------------------|
-| j        | Journal  |         | file+headline  | org-journal-file  | schedule.orgcaptmpl |
-| t        | Training |         | file+headline  | org-training-file | schedule.orgcaptmpl |
-| s        | Study    |         | file+headline  | org-study-file    | schedule.orgcaptmpl |
-| S        | Social   |         |                |                   |                     |
-| Sy       | Youtube  | Youtube | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| St       | Tiktok   | Tiktok  | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| Sb       | Blog     | Posts   | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| w        | Work     |         | file+headline  | org-work-file     | schedule.orgcaptmpl |
-| p        | Personal |         | file+headline  | org-personal-file | schedule.orgcaptmpl |
+| Shortcut | Name     | Title    | Insertion mode | file              | template            |
+|----------+----------+----------+----------------+-------------------+---------------------|
+| j        | Journal  |          | file+headline  | org-journal-file  | schedule.orgcaptmpl |
+| t        | Training |          | file+headline  | org-training-file | schedule.orgcaptmpl |
+| s        | Study    |          | file+headline  | org-study-file    | schedule.orgcaptmpl |
+| S        | Social   |          |                |                   |                     |
+| Sy       | Youtube  | Youtube  | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| St       | Tiktok   | Tiktok   | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| ST       | Tweeter  | Tweeter  | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| Sl       | Linkedin | Linkedin | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| Sb       | Blog     | Posts    | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| w        | Work     |          | file+headline  | org-work-file     | schedule.orgcaptmpl |
+| p        | Personal |          | file+headline  | org-personal-file | schedule.orgcaptmpl |
 
 All templates can be found [[https://labs.phundrak.com/phundrak/dotfiles/src/branch/master/org/capture][in my dotfiles’ repository]].
 
@@ -3618,8 +3612,6 @@ After reading about a blog article, I found out it is possible to run quite a fe
 #+end_src
 
 *** Eshell
-#+include: img/emacs-eshell.svg export html
-
 Eshell is a built-in shell available from Emacs which I use almost as often as fish. Some adjustments are necessary to make it fit my taste though.
 #+begin_src emacs-lisp
 (use-package eshell
@@ -3655,11 +3647,7 @@ Eshell is a built-in shell available from Emacs which I use almost as often as f
 #+end_src
 
 **** Aliases
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell-Aliasesom72fl6184j0
-:END:
-First, let’s declare our list of “dumb” aliases we’ll use in
-Eshell. You can find them here.
+First, let’s declare our list of “dumb” aliases we’ll use in Eshell. You can find them here.
 #+name: eshell-alias-file
 #+begin_src emacs-lisp :tangle no
 (setq eshell-aliases-file (expand-file-name "eshell-alias" user-emacs-directory))
@@ -6879,7 +6867,7 @@ A couple of keybinds are hidden from roam mode & bookmark, They are prefixed wit
 | fd  | org-roam-dailies-find-date        |              |
 | ft  | org-roam-dailies-find-today       |              |
 | fy  | org-roam-dailies-find-yesterday   |              |
-| fr  | org-roam-dailies-find-tomorrow    |              |
+| fT  | org-roam-dailies-find-tomorrow    |              |
 | g   | org-roam-graph                    |              |
 | bs  | bookmark-set                      |              |
 | bj  | bookmark-jump                     |              |

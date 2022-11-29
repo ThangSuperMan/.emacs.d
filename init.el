@@ -705,6 +705,12 @@ With a prefix argument, TRASH is nil."
             ("St" "Tiktok" entry
               (file+headline org-social-file "Tiktok")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("ST" "Tweeter" entry
+              (file+headline org-social-file "Tweeter")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("Sl" "Linkedin" entry
+              (file+headline org-social-file "Linkedin")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("Sb" "Blog" entry
               (file+headline org-social-file "Posts")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -713,8 +719,7 @@ With a prefix argument, TRASH is nil."
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("p" "Personal" entry
               (file+headline org-personal-file "Personal")
-              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
-            ))
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))))
     (defun org-emphasize-bold ()
       "Emphasize as bold the current region."
       (interactive)
@@ -4626,7 +4631,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "nfd" #'org-roam-dailies-find-date
   "nft" #'org-roam-dailies-find-today
   "nfy" #'org-roam-dailies-find-yesterday
-  "nfr" #'org-roam-dailies-find-tomorrow
+  "nfT" #'org-roam-dailies-find-tomorrow
   "ng" #'org-roam-graph
   "nbs" #'bookmark-set
   "nbj" #'bookmark-jump
