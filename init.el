@@ -929,7 +929,7 @@ With a prefix argument, TRASH is nil."
       "Tn" #'org-num-mode
       "Ts" #'dqv/toggle-org-src-window-split
       "Tt" #'org-show-todo-tree
-      "TT" #'org-todo)
+      "<SPC>" #'org-todo)
     (dqv/leader-key
       :packages 'org
       :infix "o"
@@ -1197,6 +1197,66 @@ the value `split-window-right', then it will be changed to
     "q" #'org-present-quit)
   :hook ((org-present-mode      . my/org-present-init)
          (org-present-mode-quit . my/org-present-quit)))
+
+(setq org-todo-keywords
+      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "STRT(s)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+        (sequence "[ ](T)" "[-](S)" "|" "[X](D)")
+        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
+
+(setq org-todo-keyword-faces
+      '(("IDEA" . (:foreground "goldenrod" :weight bold))
+        ("NEXT" . (:foreground "IndianRed1" :weight bold))
+        ("STRT" . (:foreground "OrangeRed" :weight bold))
+        ("WAIT" . (:foreground "coral" :weight bold))
+        ("KILL" . (:foreground "DarkGreen" :weight bold))
+        ("PROJ" . (:foreground "LimeGreen" :weight bold))
+        ("HOLD" . (:foreground "orange" :weight bold))))
+
+(defun +log-todo-next-creation-date (&rest ignore)
+  "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
+  (when (and (string= (org-get-todo-state) "NEXT")
+             (not (org-entry-get nil "ACTIVATED")))
+    (org-entry-put nil "ACTIVATED" (format-time-string "[%Y-%m-%d]"))))
+
+(add-hook 'org-after-todo-state-change-hook #'+log-todo-next-creation-date)
+
+(setq org-tag-persistent-alist
+      '((:startgroup . nil)
+        ("home"      . ?h)
+        ("research"  . ?r)
+        ("work"      . ?w)
+        (:endgroup   . nil)
+        (:startgroup . nil)
+        ("tool"      . ?o)
+        ("dev"       . ?d)
+        ("report"    . ?p)
+        (:endgroup   . nil)
+        (:startgroup . nil)
+        ("easy"      . ?e)
+        ("medium"    . ?m)
+        ("hard"      . ?a)
+        (:endgroup   . nil)
+        ("urgent"    . ?u)
+        ("key"       . ?k)
+        ("bonus"     . ?b)
+        ("ignore"    . ?i)
+        ("noexport"  . ?x)))
+
+(setq org-tag-faces
+      '(("home"     . (:foreground "goldenrod"  :weight bold))
+        ("research" . (:foreground "goldenrod"  :weight bold))
+        ("work"     . (:foreground "goldenrod"  :weight bold))
+        ("tool"     . (:foreground "IndianRed1" :weight bold))
+        ("dev"      . (:foreground "IndianRed1" :weight bold))
+        ("report"   . (:foreground "IndianRed1" :weight bold))
+        ("urgent"   . (:foreground "red"        :weight bold))
+        ("key"      . (:foreground "red"        :weight bold))
+        ("easy"     . (:foreground "green4"     :weight bold))
+        ("medium"   . (:foreground "orange"     :weight bold))
+        ("hard"     . (:foreground "red"        :weight bold))
+        ("bonus"    . (:foreground "goldenrod"  :weight bold))
+        ("ignore"   . (:foreground "Gray"       :weight bold))
+        ("noexport" . (:foreground "LimeGreen"  :weight bold))))
 
 (use-package mixed-pitch
   :after org
@@ -2300,7 +2360,7 @@ deactivate `magit-todos-mode', otherwise enable it."
 
 (setenv "EDITOR" "emacsclient -c -a emacs")
 
-(setenv "SHELL" "/bin/sh")
+(setenv "SHELL" "/bin/zsh")
 
 (use-package eshell-info-banner
   :after (eshell)
@@ -2361,8 +2421,8 @@ deactivate `magit-todos-mode', otherwise enable it."
                      '("yadm"
                        (tramp-login-program "yadm")
                        (tramp-login-args (("enter")))
-                       (tramp-login-env (("SHELL") ("/bin/sh")))
-                       (tramp-remote-shell "/bin/sh")
+                       (tramp-login-env (("SHELL") ("/bin/zsh")))
+                       (tramp-remote-shell "/bin/zsh")
                        (tramp-remote-shell-args ("-c"))))
   (csetq tramp-ssh-controlmaster-options nil
          tramp-verbose 0
@@ -2797,6 +2857,8 @@ Spell Commands^^           Add To Dictionary^^              Other
          (c++-mode        . lsp-deferred)
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
+         (rustic-mode     . lsp-deferred)
+         (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
   :commands (lsp lsp-deferred)
@@ -3202,6 +3264,9 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :mode "\\.yml\\'"
   :mode "\\.yaml\\'")
+
+(use-package move-mode
+  :straight (:build t :host github :repo "amnn/move-mode" :branch "main"))
 
 (use-package cc-mode
   :straight (:type built-in)
@@ -3780,6 +3845,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :after flycheck
   :init
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-tsx-mode))
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
   :general
   (dqv/major-leader-key
     :packages 'lsp
@@ -3793,6 +3859,7 @@ Spell Commands^^           Add To Dictionary^^              Other
     :keymaps '(typescript-mode-map typescript-tsx-mode-map)
     "n" '(:keymap npm-mode-command-keymap :which-key "npm"))
   :config
+  (setq typescript-indent-level 2)
   (with-eval-after-load 'flycheck
     (flycheck-add-mode 'javascript-eslint 'web-mode)
     (flycheck-add-mode 'javascript-eslint 'typescript-mode)
@@ -3844,38 +3911,6 @@ Spell Commands^^           Add To Dictionary^^              Other
     "f" #'zig-format-buffer
     "r" #'zig-run
     "t" #'zig-test-buffer))
-
-(use-package dashboard
-  :straight (:build t)
-  :ensure t
-  :after all-the-icons
-  :config
-  (setq dashboard-banner-logo-title "Vugomars’ Emacs"
-        dashboard-startup-banner    'logo
-        dashboard-center-content    t
-        dashboard-show-shortcuts    t
-        dashboard-set-navigator     t
-        dashboard-set-heading-icons t
-        dashboard-set-file-icons    t
-        initial-buffer-choice       (lambda () (get-buffer "*dashboard*"))
-        dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
-  (setq dashboard-navigator-buttons
-        `(((,(all-the-icons-faicon "language" :height 1.1 :v-adjust 0.0)
-            "Vugomars' Website"
-            ""
-            (lambda (&rest _) (browse-url "https://vugomars.com"))))
-          ((,(all-the-icons-faicon "level-up" :height 1.1 :v-adjust 0.0)
-            "Update Packages"
-            ""
-            (lambda (&rest _) (progn
-                                (require 'straight)
-                                (straight-pull-all)
-                                (straight-rebuild-all)))))))
-
-  (setq dashboard-items '((agenda   . 15)))
-  (dashboard-setup-startup-hook)
-  :init
-  (add-hook 'after-init-hook 'dashboard-refresh-buffer))
 
 (use-package git-gutter-fringe
   :straight (:build t)
@@ -4492,7 +4527,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "bc" #'clone-indirect-buffer
   "bC" #'clone-indirect-buffer-other-window
   "bl" #'bufler
-  "bd" #'kill-this-buffer
+  "bk" #'kill-this-buffer
   "bD" #'kill-buffer
   "bh" #'dashboard-refresh-buffer
   "bm" #'switch-to-messages-buffer

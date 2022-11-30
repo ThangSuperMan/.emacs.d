@@ -1955,7 +1955,7 @@ Finally, let’s make enabling and disabling stuff accessible:
 | Tn        | org-num-mode                    |             |
 | Ts        | dqv/toggle-org-src-window-split |             |
 | Tt        | org-show-todo-tree              |             |
-| TT        | org-todo                        |             |
+| <SPC>     | org-todo                        |             |
 
 *** LaTeX formats
 :PROPERTIES:
@@ -2159,6 +2159,71 @@ which is really nice! However, most of my configuration will be stolen
     "q" #'org-present-quit)
   :hook ((org-present-mode      . my/org-present-init)
          (org-present-mode-quit . my/org-present-quit)))
+#+end_src
+
+*** TODOs
+#+begin_src emacs-lisp
+(setq org-todo-keywords
+      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "STRT(s)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+        (sequence "[ ](T)" "[-](S)" "|" "[X](D)")
+        (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
+
+(setq org-todo-keyword-faces
+      '(("IDEA" . (:foreground "goldenrod" :weight bold))
+        ("NEXT" . (:foreground "IndianRed1" :weight bold))
+        ("STRT" . (:foreground "OrangeRed" :weight bold))
+        ("WAIT" . (:foreground "coral" :weight bold))
+        ("KILL" . (:foreground "DarkGreen" :weight bold))
+        ("PROJ" . (:foreground "LimeGreen" :weight bold))
+        ("HOLD" . (:foreground "orange" :weight bold))))
+
+(defun +log-todo-next-creation-date (&rest ignore)
+  "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
+  (when (and (string= (org-get-todo-state) "NEXT")
+             (not (org-entry-get nil "ACTIVATED")))
+    (org-entry-put nil "ACTIVATED" (format-time-string "[%Y-%m-%d]"))))
+
+(add-hook 'org-after-todo-state-change-hook #'+log-todo-next-creation-date)
+#+end_src
+*** Tags                                                                  :tag:
+#+begin_src emacs-lisp
+(setq org-tag-persistent-alist
+      '((:startgroup . nil)
+        ("home"      . ?h)
+        ("research"  . ?r)
+        ("work"      . ?w)
+        (:endgroup   . nil)
+        (:startgroup . nil)
+        ("tool"      . ?o)
+        ("dev"       . ?d)
+        ("report"    . ?p)
+        (:endgroup   . nil)
+        (:startgroup . nil)
+        ("easy"      . ?e)
+        ("medium"    . ?m)
+        ("hard"      . ?a)
+        (:endgroup   . nil)
+        ("urgent"    . ?u)
+        ("key"       . ?k)
+        ("bonus"     . ?b)
+        ("ignore"    . ?i)
+        ("noexport"  . ?x)))
+
+(setq org-tag-faces
+      '(("home"     . (:foreground "goldenrod"  :weight bold))
+        ("research" . (:foreground "goldenrod"  :weight bold))
+        ("work"     . (:foreground "goldenrod"  :weight bold))
+        ("tool"     . (:foreground "IndianRed1" :weight bold))
+        ("dev"      . (:foreground "IndianRed1" :weight bold))
+        ("report"   . (:foreground "IndianRed1" :weight bold))
+        ("urgent"   . (:foreground "red"        :weight bold))
+        ("key"      . (:foreground "red"        :weight bold))
+        ("easy"     . (:foreground "green4"     :weight bold))
+        ("medium"   . (:foreground "orange"     :weight bold))
+        ("hard"     . (:foreground "red"        :weight bold))
+        ("bonus"    . (:foreground "goldenrod"  :weight bold))
+        ("ignore"   . (:foreground "Gray"       :weight bold))
+        ("noexport" . (:foreground "LimeGreen"  :weight bold))))
 #+end_src
 
 *** Visual Configuration
@@ -3653,9 +3718,7 @@ First, let’s declare our list of “dumb” aliases we’ll use in Eshell. You
 (setq eshell-aliases-file (expand-file-name "eshell-alias" user-emacs-directory))
 #+end_src
 
-A couple of other aliases will be defined through custom Elisp
-functions, but first I’ll need a function for concatenating a shell
-command into a single string:
+A couple of other aliases will be defined through custom Elisp functions, but first I’ll need a function for concatenating a shell command into a single string:
 #+name: eshell-concat-shell-command
 #+begin_src emacs-lisp :tangle no
 (defun phundrak/concatenate-shell-command (&rest command)
@@ -3665,38 +3728,26 @@ space-separated string."
   (mapconcat #'identity command " "))
 #+end_src
 
-I’ll also declare some aliases here, such as ~open~ and ~openo~ that
-respectively allow me to open a file in Emacs, and same but in another
-window.
+I’ll also declare some aliases here, such as ~open~ and ~openo~ that respectively allow me to open a file in Emacs, and same but in another window.
 #+name: eshell-alias-open
 #+begin_src emacs-lisp :tangle no
 (defalias 'open #'find-file)
 (defalias 'openo #'find-file-other-window)
 #+end_src
 
-The default behavior of ~eshell/clear~ is not great at all, although it
-clears the screen it also scrolls all the way down. Therefore, let’s
-alias it to ~eshell/clear-scrollback~ which has the correct behavior.
+The default behavior of ~eshell/clear~ is not great at all, although it clears the screen it also scrolls all the way down. Therefore, let’s alias it to ~eshell/clear-scrollback~ which has the correct behavior.
 #+name: eshell-alias-clear
 #+begin_src emacs-lisp :tangle no
 (defalias 'eshell/clear #'eshell/clear-scrollback)
 #+end_src
 
-As you see, these were not declared in my dedicated aliases file but
-rather were declared programmatically. This is because I like to keep
-my aliases file for stuff that could work too with other shells were
-the syntax a bit different, and aliases related to Elisp are kept
-programmatically. I’ll also declare ~list-buffers~ an alias of ~ibuffer~
-because naming it that way kind of makes more sense to me.
+As you see, these were not declared in my dedicated aliases file but rather were declared programmatically. This is because I like to keep my aliases file for stuff that could work too with other shells were the syntax a bit different, and aliases related to Elisp are kept programmatically. I’ll also declare ~list-buffers~ an alias of ~ibuffer~ because naming it that way kind of makes more sense to me.
 #+name: eshell-alias-buffers
 #+begin_src emacs-lisp :tangle no
 (defalias 'list-buffers 'ibuffer)
 #+end_src
 
-I still have some stupid muscle memory telling me to open ~emacs~, ~vim~
-or ~nano~ in Eshell, which is stupid: I’m already inside Emacs and I
-have all its power available instantly. So, let’s open each file
-passed to these commands.
+I still have some stupid muscle memory telling me to open ~emacs~, ~vim~ or ~nano~ in Eshell, which is stupid: I’m already inside Emacs and I have all its power available instantly. So, let’s open each file passed to these commands.
 #+name: eshell-alias-emacs
 #+begin_src emacs-lisp :tangle no
 (defun eshell/emacs (&rest file)
@@ -3739,12 +3790,7 @@ here!
 #+end_src
 
 **** Commands
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell-Commands-n8w3fh2195j0
-:END:
-When I’m in Eshell, sometimes I wish to open multiple files at once in
-Emacs. For this, when I have several arguments for ~find-file~, I want
-to be able to open them all at once. Let’s modify ~find-file~ like so:
+When I’m in Eshell, sometimes I wish to open multiple files at once in Emacs. For this, when I have several arguments for ~find-file~, I want to be able to open them all at once. Let’s modify ~find-file~ like so:
 #+BEGIN_SRC emacs-lisp
 (defadvice find-file (around find-files activate)
   "Also find all files within a list of files. This even works recursively."
@@ -3753,9 +3799,7 @@ to be able to open them all at once. Let’s modify ~find-file~ like so:
     ad-do-it))
 #+END_SRC
 
-I also want to be able to have multiple instances of Eshell opened at
-once. For that, I declared the function ~eshell-new~ that does exactly
-that.
+I also want to be able to have multiple instances of Eshell opened at once. For that, I declared the function ~eshell-new~ that does exactly that.
 #+begin_src emacs-lisp
 (defun eshell-new ()
   "Open a new instance of eshell."
@@ -3763,9 +3807,7 @@ that.
   (eshell 'N))
 #+end_src
 
-A very useful command I use often in fish is ~z~, a port from bash’s and
-zsh’s command that allows to jump around directories based on how
-often we go in various directories.
+A very useful command I use often in fish is ~z~, a port from bash’s and zsh’s command that allows to jump around directories based on how often we go in various directories.
 #+begin_src emacs-lisp
 (use-package eshell-z
   :defer t
@@ -3775,19 +3817,13 @@ often we go in various directories.
 #+end_src
 
 **** Environment Variables
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell-Environment-Variablesmna2fl6184j0
-:END:
-Some environment variables need to be correctly set so Eshell can
-correctly work. I would like to set two environment variables related
-to Dart development: the ~DART_SDK~ and ~ANDROID_HOME~ variables.
+Some environment variables need to be correctly set so Eshell can correctly work. I would like to set two environment variables related to Dart development: the ~DART_SDK~ and ~ANDROID_HOME~ variables.
 #+BEGIN_SRC emacs-lisp
 (setenv "DART_SDK" "/opt/dart-sdk/bin")
 (setenv "ANDROID_HOME" (concat (getenv "HOME") "/Android/Sdk/"))
 #+END_SRC
 
-The ~EDITOR~ variable also needs to be set for git commands, especially the
-~yadm~ commands.
+The ~EDITOR~ variable also needs to be set for git commands, especially the ~yadm~ commands.
 #+BEGIN_SRC emacs-lisp
 (setenv "EDITOR" "emacsclient -c -a emacs")
 #+END_SRC
@@ -3795,18 +3831,11 @@ The ~EDITOR~ variable also needs to be set for git commands, especially the
 Finally, for some specific situations I need ~SHELL~ to be set to
 something more standard than fish:
 #+begin_src emacs-lisp
-(setenv "SHELL" "/bin/sh")
+(setenv "SHELL" "/bin/zsh")
 #+end_src
 
 **** Visual configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell-Visual-configuratione7c2fl6184j0
-:END:
-I like to have at quick glance some information about my machine when
-I fire up a terminal. I haven’t found anything that does that the way
-I like it, so [[https://github.com/Phundrak/eshell-info-banner.el][I’ve written a package]]! It’s actually available on
-MELPA, but since I’m the main dev of this package, I’ll keep track of
-the git repository.
+I like to have at quick glance some information about my machine when I fire up a terminal. I haven’t found anything that does that the way I like it, so [[https://github.com/Phundrak/eshell-info-banner.el][I’ve written a package]]! It’s actually available on MELPA, but since I’m the main dev of this package, I’ll keep track of the git repository.
 #+begin_src emacs-lisp
 (use-package eshell-info-banner
   :after (eshell)
@@ -3822,8 +3851,7 @@ the git repository.
         eshell-info-banner-partition-prefixes '("/dev" "zroot" "tank")))
 #+end_src
 
-Another feature I like is fish-like syntax highlight, which brings
-some more colors to Eshell.
+Another feature I like is fish-like syntax highlight, which brings some more colors to Eshell.
 #+begin_src emacs-lisp
 (use-package eshell-syntax-highlighting
   :after (esh-mode eshell)
@@ -3912,8 +3940,8 @@ how! Let’s just insert in my config this code snippet:
                    '("yadm"
                      (tramp-login-program "yadm")
                      (tramp-login-args (("enter")))
-                     (tramp-login-env (("SHELL") ("/bin/sh")))
-                     (tramp-remote-shell "/bin/sh")
+                     (tramp-login-env (("SHELL") ("/bin/zsh")))
+                     (tramp-remote-shell "/bin/zsh")
                      (tramp-remote-shell-args ("-c"))))
 #+end_src
 
@@ -4422,6 +4450,8 @@ Spell Commands^^           Add To Dictionary^^              Other
          (c++-mode        . lsp-deferred)
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
+         (rustic-mode     . lsp-deferred)
+         (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
   :commands (lsp lsp-deferred)
@@ -4996,6 +5026,12 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
   :straight (:build t)
   :mode "\\.yml\\'"
   :mode "\\.yaml\\'")
+#+end_src
+
+**** Move-languages
+#+begin_src emacs-lisp
+(use-package move-mode
+  :straight (:build t :host github :repo "amnn/move-mode" :branch "main"))
 #+end_src
 
 *** General Programming Languages
@@ -5737,6 +5773,7 @@ Typescript is a safer alternative to Javascript. Let’s install its major mode 
   :after flycheck
   :init
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . typescript-tsx-mode))
+  (add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-mode))
   :general
   (dqv/major-leader-key
     :packages 'lsp
@@ -5750,6 +5787,7 @@ Typescript is a safer alternative to Javascript. Let’s install its major mode 
     :keymaps '(typescript-mode-map typescript-tsx-mode-map)
     "n" '(:keymap npm-mode-command-keymap :which-key "npm"))
   :config
+  (setq typescript-indent-level 2)
   (with-eval-after-load 'flycheck
     (flycheck-add-mode 'javascript-eslint 'web-mode)
     (flycheck-add-mode 'javascript-eslint 'typescript-mode)
@@ -5784,9 +5822,7 @@ Tide enabled interactivity with Typescript.
 #+end_src
 
 **** Zig
-[[https://ziglang.org/][Zig]] is to C kind of what Rust is to C++: a modern replacement without
-sacrificing performance. It is much safer than C while providing
-interop with it. Plus, its [[https://ziglang.org/documentation/master/std/][standard library]] is pretty complete.
+[[https://ziglang.org/][Zig]] is to C kind of what Rust is to C++: a modern replacement without sacrificing performance. It is much safer than C while providing interop with it. Plus, its [[https://ziglang.org/documentation/master/std/][standard library]] is pretty complete.
 
 First, here is its major mode.
 #+begin_src emacs-lisp
@@ -5887,41 +5923,6 @@ Make sure to backup your old configuration!
 #+end_src
 
 ** Visual Configuration
-*** Dashboard
-#+begin_src emacs-lisp
-(use-package dashboard
-  :straight (:build t)
-  :ensure t
-  :after all-the-icons
-  :config
-  (setq dashboard-banner-logo-title "Vugomars’ Emacs"
-        dashboard-startup-banner    'logo
-        dashboard-center-content    t
-        dashboard-show-shortcuts    t
-        dashboard-set-navigator     t
-        dashboard-set-heading-icons t
-        dashboard-set-file-icons    t
-        initial-buffer-choice       (lambda () (get-buffer "*dashboard*"))
-        dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
-  (setq dashboard-navigator-buttons
-        `(((,(all-the-icons-faicon "language" :height 1.1 :v-adjust 0.0)
-            "Vugomars' Website"
-            ""
-            (lambda (&rest _) (browse-url "https://vugomars.com"))))
-          ((,(all-the-icons-faicon "level-up" :height 1.1 :v-adjust 0.0)
-            "Update Packages"
-            ""
-            (lambda (&rest _) (progn
-                                (require 'straight)
-                                (straight-pull-all)
-                                (straight-rebuild-all)))))))
-
-  (setq dashboard-items '((agenda   . 15)))
-  (dashboard-setup-startup-hook)
-  :init
-  (add-hook 'after-init-hook 'dashboard-refresh-buffer))
-#+end_src
-
 *** Fringe
 It’s nice to know which lines were modified since the last commit in a file.
 #+begin_src emacs-lisp
@@ -6659,7 +6660,7 @@ My buffer-related keybinds are all prefixed by ~b~.
 | c   | clone-indirect-buffer              |             |
 | C   | clone-indirect-buffer-other-window |             |
 | l   | bufler                             |             |
-| d   | kill-this-buffer                   |             |
+| k   | kill-this-buffer                   |             |
 | D   | kill-buffer                        |             |
 | h   | dashboard-refresh-buffer           |             |
 | m   | switch-to-messages-buffer          |             |
