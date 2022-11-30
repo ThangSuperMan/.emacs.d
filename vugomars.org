@@ -17,66 +17,11 @@
 
 #+TOC: headlines 4
 
-* Table Of Content :TOC:
-- [[#package-management][Package Management]]
-  - [[#repositories][Repositories]]
-  - [[#straight][Straight]]
-  - [[#auth][Auth]]
-- [[#basic-configuration][Basic Configuration]]
-  - [[#early-init][Early Init]]
-  - [[#emacs-behavior][Emacs Behavior]]
-  - [[#personal-information][Personal Information]]
-  - [[#visual-configuration][Visual Configuration]]
-  - [[#a-better-custom-variable-setter][A better custom variable setter]]
-- [[#custom-elisp][Custom Elisp]]
-  - [[#load-paths][Load-paths]]
-  - [[#dired-functions][Dired functions]]
-  - [[#switch-between-buffers][Switch between buffers]]
-  - [[#screenshots][Screenshots]]
-  - [[#handle-new-windows][Handle new windows]]
-  - [[#extend-add-to-list][Extend ~add-to-list~]]
-  - [[#scroll-page][Scroll page]]
-  - [[#switch-to-previous-buffer][Switch to previous buffer]]
-  - [[#move-to-beginning-of-live][Move to beginning of live]]
-  - [[#go-to-match-paren][Go to match paren]]
-  - [[#delete-this-file][Delete This File]]
-  - [[#kill-all-the-buffer][Kill all the buffer]]
-- [[#keybinding-management][Keybinding Management]]
-  - [[#which-key][Which-key]]
-  - [[#general][General]]
-  - [[#evil][Evil]]
-  - [[#hydra][Hydra]]
-- [[#function-decleration][Function Decleration]]
-  - [[#kill-other-buffer][Kill Other Buffer]]
-- [[#org-mode][Org-mode]]
-- [[#packages-configuration][Packages Configuration]]
-  - [[#autocompletion][Autocompletion]]
-  - [[#applications][Applications]]
-  - [[#editing][Editing]]
-  - [[#emacs-built-ins][Emacs built-ins]]
-  - [[#making-my-life-easier][Making my life easier]]
-  - [[#latex][LaTeX]]
-  - [[#programming][Programming]]
-  - [[#visual-configuration-1][Visual Configuration]]
-  - [[#misc][Misc]]
-- [[#keybindings][Keybindings]]
-  - [[#apps][Apps]]
-  - [[#buffers][Buffers]]
-  - [[#errors][Errors]]
-  - [[#files][Files]]
-  - [[#help][Help]]
-  - [[#project][Project]]
-  - [[#text][Text]]
-  - [[#toggles][Toggles]]
-  - [[#windows][Windows]]
-  - [[#org-gcal][Org Gcal]]
-  - [[#org-roam][Org Roam]]
-  - [[#leetcode][Leetcode]]
-
 * Package Management
 ** Repositories
 By default, only GNU’s repositories are available to the package managers of Emacs. I also want to use Melpa and org-mode’s repository, so let’s add them! Note that the stock /elpa/ repository is renamed to /gnu/ due to the addition of another Elpa repository, /nongnu/, which will hosts packages that do not conform to the FSF’s copyright assignment. Both the /gnu/ and the /nonfree/ repositories are Elpa repositories now, and they are renamed here in order to avoid any confusion between the two of them. Melpa is a community-maintained repository which contains an absurd amount of Emacs packages.
 #+begin_src emacs-lisp
+;; -*- lexical-binding: t; -*-
 (setq package-archives '(("melpa"  . "https://melpa.org/packages/")
                          ("gnu"    . "https://elpa.gnu.org/packages/")
                          ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
@@ -1530,12 +1475,12 @@ selected text is quite easy.
 #+name: org-emphasis-character
 | Emphasis       | Character | Character code |
 |----------------+-----------+----------------|
-| bold           | ~*~         |             42 |
-| italic         | ~/~         |             47 |
-| underline      | ~_~         |             95 |
-| verbatim       | ~=~         |             61 |
-| code           | ~~~         |            126 |
-| strike-through | ~+~         |             43 |
+| bold           | ~*~       |             42 |
+| italic         | ~/~       |             47 |
+| underline      | ~_~       |             95 |
+| verbatim       | ~=~       |             61 |
+| code           | ~~~       |            126 |
+| strike-through | ~+~       |             43 |
 
 #+name: org-create-emphasis-functions
 #+header: :tangle no :exports results :cache yes
@@ -1608,30 +1553,14 @@ the value `split-window-right', then it will be changed to
 #+end_src
 
 *** Exporters
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-File-exportik95fl6184j0
-:END:
-I want to disable by default behavior of ~^~ and ~_~ for only one
-character, making it compulsory to use instead ~^{}~ and ~_{}~
-respectively. This is due to my frequent usage of the underscore in my
-org files as a regular character and not a markup one, especially when
-describing phonetics evolution. So, let’s disable it:
+I want to disable by default behavior of ~^~ and ~_~ for only one character, making it compulsory to use instead ~^{}~ and ~_{}~ respectively. This is due to my frequent usage of the underscore in my org files as a regular character and not a markup one, especially when describing phonetics evolution. So, let’s disable it:
 #+NAME: org-use-sub-superscripts
 #+BEGIN_SRC emacs-lisp :tangle no
 (setq org-use-sub-superscripts (quote {}))
 #+END_SRC
 
 **** ConlangDict
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Exporters-ConlangDict-wvi7vaa16fj0
-:END:
-I am currently working on new exporters as well as custom links for my
-org websites. They are first thought for my [[https://conlang.phundrak.com][conlanging website]], hence
-the name, but one can use the package for any org-generated website.
-This package provides two exporters, ~ox-conlang-md~ and
-~ox-conlang-json~, as well as ~ol-conlang~ to handle links to and inside
-the dictionary. The markdown files are meant to be used with my custom
-Vue front-end (not publicly released yet).
+I am currently working on new exporters as well as custom links for my org websites. They are first thought for my [[https://conlang.phundrak.com][conlanging website]], hence the name, but one can use the package for any org-generated website. This package provides two exporters, ~ox-conlang-md~ and ~ox-conlang-json~, as well as ~ol-conlang~ to handle links to and inside the dictionary. The markdown files are meant to be used with my custom Vue front-end (not publicly released yet).
 #+begin_src emacs-lisp
 (use-package org-conlang
   :defer t
@@ -1643,11 +1572,7 @@ Vue front-end (not publicly released yet).
 #+end_src
 
 **** Epub
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-File-export-Epub-w5ycfuz095j0
-:END:
-A backend for exporting files through org I like is ~ox-epub~ which, as
-you can guess, exports org files to the [[https://www.w3.org/publishing/epub32/][Epub format]].
+A backend for exporting files through org I like is ~ox-epub~ which, as you can guess, exports org files to the [[https://www.w3.org/publishing/epub32/][Epub format]].
 #+begin_src emacs-lisp
 (use-package ox-epub
   :after (org ox)
@@ -1655,9 +1580,6 @@ you can guess, exports org files to the [[https://www.w3.org/publishing/epub32/]
 #+end_src
 
 **** Gemini
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Exporters-Gemini-4td3dk21kej0
-:END:
 #+begin_src emacs-lisp
 (use-package ox-gemini
   :defer t
@@ -1666,11 +1588,7 @@ you can guess, exports org files to the [[https://www.w3.org/publishing/epub32/]
 #+end_src
 
 **** HTML
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-File-export-HTMLxjc5fl6184j0
-:END:
-On HTML exports, Org-mode tries to include a validation link for the
-exported HTML. Let’s disable that since I never use it.
+On HTML exports, Org-mode tries to include a validation link for the exported HTML. Let’s disable that since I never use it.
 #+NAME: org-html-validation
 #+BEGIN_SRC emacs-lisp :tangle no
 (setq org-html-validation-link nil)
@@ -3474,6 +3392,14 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
     )
 #+end_src
 
+*** Move Text
+#+begin_src emacs-lisp
+(use-package move-text
+  :straight (:build t))
+
+(global-set-key (kbd "s-j") #'move-text-down)
+(global-set-key (kbd "s-k") #'move-text-up)
+#+end_src
 *** Hide-show
 #+begin_src emacs-lisp
 (use-package hideshow
@@ -4008,14 +3934,14 @@ I’ll also create a fuction for connecting to this new Tramp protocol:
 
 *** Helpful
 As the name tells, ~helpful~ is a really helpful package which greatly enhances a couple of built-in functions from Emacs, namely:
-| Vanilla Emacs Function | Helpful Function | Comment                                       |
-|------------------------+------------------+-----------------------------------------------|
-| ~describe-function~      | ~helpful-callable~ | Only interactive functions                    |
-| ~describe-function~      | ~helpful-function~ | Only actual functions (including interactive) |
-| ~describe-function~      | ~helpful-macro~    |                                               |
-| ~describe-command~       | ~helpful-command~  |                                               |
-| ~describe-key~           | ~helpful-key~      |                                               |
-| ~describe-variable~      | ~helpful-variable~ |                                               |
+| Vanilla Emacs Function | Helpful Function   | Comment                                       |
+|------------------------+--------------------+-----------------------------------------------|
+| ~describe-function~    | ~helpful-callable~ | Only interactive functions                    |
+| ~describe-function~    | ~helpful-function~ | Only actual functions (including interactive) |
+| ~describe-function~    | ~helpful-macro~    |                                               |
+| ~describe-command~     | ~helpful-command~  |                                               |
+| ~describe-key~         | ~helpful-key~      |                                               |
+| ~describe-variable~    | ~helpful-variable~ |                                               |
 
 #+begin_src emacs-lisp
 (use-package helpful
@@ -4451,6 +4377,7 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
+         (json-mode     . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
@@ -5011,6 +4938,14 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
     "o" 'systemd-doc-open))
 #+end_src
 
+**** Json
+#+begin_src emacs-lisp
+(use-package json-mode
+  :straight (:build t)
+  :mode "\\.json$"
+  :config
+  (add-to-list 'flycheck-disabled-checkers 'json-python-json))
+#+end_src
 **** Toml
 #+begin_src emacs-lisp
 (use-package toml-mode

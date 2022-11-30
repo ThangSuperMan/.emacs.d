@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (setq package-archives '(("melpa"  . "https://melpa.org/packages/")
                          ("gnu"    . "https://elpa.gnu.org/packages/")
                          ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
@@ -2139,6 +2140,12 @@ deactivate `magit-todos-mode', otherwise enable it."
            ("C-M-s-o" . bm-show-all))
     )
 
+(use-package move-text
+  :straight (:build t))
+
+(global-set-key (kbd "s-j") #'move-text-down)
+(global-set-key (kbd "s-k") #'move-text-up)
+
 (use-package hideshow
   :hook
   (prog-mode . hs-minor-mode)
@@ -2858,6 +2865,7 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
+         (json-mode     . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
@@ -3253,6 +3261,12 @@ Spell Commands^^           Add To Dictionary^^              Other
     :keymaps '(systemd-mode-map)
     "d" '(systemd-doc-directives :which-key "directives manpage")
     "o" 'systemd-doc-open))
+
+(use-package json-mode
+  :straight (:build t)
+  :mode "\\.json$"
+  :config
+  (add-to-list 'flycheck-disabled-checkers 'json-python-json))
 
 (use-package toml-mode
   :straight (:build t)
