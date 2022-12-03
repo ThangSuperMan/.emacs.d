@@ -6,7 +6,7 @@
 title: "$0"
 description:
 author: Dang Quang Vu
-authorImage:
+authorImage: https://img.upanh.tv/2022/12/01/logo.png
 coverImage:
-date: `(format-time-string "%Y-%m-%d")`
+date: "`(format-time-string "%Y-%m-%d")`"
 ---

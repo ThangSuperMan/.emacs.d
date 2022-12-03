@@ -2185,6 +2185,31 @@ deactivate `magit-todos-mode', otherwise enable it."
        (setq this-command 'hs-global-show))
       (_ (hs-hide-all))))
 
+  (use-package eyebrowse
+    :straight (:build t)
+    :config
+    (setq eyebrowse-new-workspace t)
+    (eyebrowse-mode 1))
+
+  (dqv/leader-key
+   "TAB"  '(:ignore t :which-key "Window Management")
+   "TAB 0" '(eyebrowse-switch-to-window-config-0 :which-key "Select Windown 0")
+   "TAB 1" '(eyebrowse-switch-to-window-config-1 :which-key "Select Window 1")
+   "TAB 2" '(eyebrowse-switch-to-window-config-2 :which-key "Select Window 2")
+   "TAB 3" '(eyebrowse-switch-to-window-config-3 :which-key "Select Window 3")
+   "TAB 4" '(eyebrowse-switch-to-window-config-4 :which-key "Select Window 4")
+   "TAB 5" '(eyebrowse-switch-to-window-config-5 :which-key "Select Window 5")
+   "TAB 6" '(eyebrowse-switch-to-window-config-6 :which-key "Select Window 6")
+   "TAB 7" '(eyebrowse-switch-to-window-config-7 :which-key "Select Window 7")
+   "TAB 8" '(eyebrowse-switch-to-window-config-8 :which-key "Select Window 8")
+   "TAB 9" '(eyebrowse-switch-to-window-config-9 :which-key "Select Window 9")
+   "TAB r" '(eyebrowse-rename-window-config :which-key "Rename Window")
+   "TAB n" '(eyebrowse-create-window-config :which-key "Create New Window")
+   "TAB TAB" '(eyebrowse-switch-to-window-config :which-key "Switch Window")
+   "TAB d" '(eyebrowse-close-window-config :which-key "Delete Window")
+   "TAB j" '(eyebrowse-next-window-config :which-key "Next Window")
+   "TAB k" '(eyebrowse-prev-window-config :which-key "Previous Window"))
+
 (use-package dirvish
   :straight (:build t)
   :defer t
@@ -2687,16 +2712,6 @@ deactivate `magit-todos-mode', otherwise enable it."
   :after tree-sitter
   :straight (:build t))
 
-(use-package appwrite
-  :defer t
-  :straight (appwrite :build t
-                      :type git
-                      :host github
-                      :repo "Phundrak/appwrite.el")
-  :config
-  (csetq appwrite-endpoint "https://appwrite.phundrak.com"
-         appwrite-devel t))
-
 (use-package emacsql-psql
   :defer t
   :after (emacsql)
@@ -2764,17 +2779,18 @@ deactivate `magit-todos-mode', otherwise enable it."
   (setq langtool-java-classpath (string-join '("/usr/share/languagetool"
                                                "/usr/share/java/languagetool/*")
                                              ":"))
-  :general
-  (dqv/leader-key
-    :packages 'langtool
-    :infix "l"
-    ""  '(:ignore t :which-key "LangTool")
-    "B" #'langtool-correct-buffer
-    "b" #'langtool-check-buffer
-    "c" #'langtool-check
-    "d" #'langtool-check-done
-    "l" #'langtool-switch-default-language
-    "p" #'langtool-show-message-at-point))
+  ;;:general
+  ;; (dqv/leader-key
+  ;;   :packages 'langtool
+  ;;   :infix "l"
+  ;;   ""  '(:ignore t :which-key "LangTool")
+  ;;   "B" #'langtool-correct-buffer
+  ;;   "b" #'langtool-check-buffer
+  ;;   "c" #'langtool-check
+  ;;   "d" #'langtool-check-done
+  ;;   "l" #'langtool-switch-default-language
+  ;;   "p" #'langtool-show-message-at-point)
+)
 
 (use-package writegood-mode
   :defer t
@@ -4017,12 +4033,12 @@ Spell Commands^^           Add To Dictionary^^              Other
   ;; :hook ((org-mode markdown-mode) . valign-mode)
   :custom ((valign-fancy-bar t)))
 
-(use-package secret-mode
+(use-package redacted-mode
   :defer t
   :straight (secret-mode :build t
                          :type git
                          :host github
-                         :repo "bkaestner/secret-mode.el"))
+                         :repo "bkaestner/redacted.el"))
 
 (use-package solaire-mode
   :defer t
@@ -4492,48 +4508,48 @@ Spell Commands^^           Add To Dictionary^^              Other
   "ase" #'eshell-new
   "asv" #'vterm
   "asV" #'multi-vterm
-  "at" '(:ignore t :wk "treemacs")
-  "atc" '(:ignore t :wk "create")
-  "atcd" #'treemacs-create-dir
-  "atcf" #'treemacs-create-file
-  "atci" #'treemacs-create-icon
-  "atct" #'treemacs-create-theme
-  "atcw" #'treemacs-create-workspace
-  "atd" #'treemacs-delete-file
-  "atf" '(:ignore t :wk "files")
-  "atff" #'treemacs-find-file
-  "atft" #'treemacs-find-tag
-  "atl" '(:ignore t :wk "lsp")
-  "atls" #'treemacs-expand-lsp-symbol
-  "atld" #'treemacs-expand-lsp-treemacs-deps
-  "atlD" #'treemacs-collapse-lsp-treemacs-deps
-  "atlS" #'treemacs-collapse-lsp-symbol
-  "atp" '(:ignore t :wk "projects")
-  "atpa" #'treemacs-add-project
-  "atpf" #'treemacs-project-follow-mode
-  "atpn" #'treemacs-project-of-node
-  "atpp" #'treemacs-project-at-point
-  "atpr" #'treemacs-remove-project-from-workspace
-  "atpt" #'treemacs-move-project-down
-  "atps" #'treemacs-move-project-up
-  "atr" '(:ignore t :wk "rename")
-  "atrf" #'treemacs-rename-file
-  "atrp" #'treemacs-rename-project
-  "atrr" #'treemacs-rename
-  "atrw" #'treemacs-rename-workspace
-  "att" #'treemacs
-  "atT" '(:ignore t :wk "toggles")
-  "atTd" #'treemacs-toggle-show-dotfiles
-  "atTn" #'treemacs-toggle-node
-  "atv" '(:ignore t :wk "visit node")
-  "atva" #'treemacs-visit-node-ace
-  "atvc" #'treemacs-visit-node-close-treemacs
-  "atvn" #'treemacs-visit-node-default
-  "aty" '(:ignore t :wk "yank")
-  "atya" #'treemacs-copy-absolute-path-at-point
-  "atyp" #'treemacs-copy-project-path-at-point
-  "atyr" #'treemacs-copy-relative-path-at-point
-  "atyf" #'treemacs-copy-file
+  "m" '(:ignore t :wk "treemacs")
+  "mc" '(:ignore t :wk "create")
+  "mcd" #'treemacs-create-dir
+  "mcf" #'treemacs-create-file
+  "mci" #'treemacs-create-icon
+  "mct" #'treemacs-create-theme
+  "mcw" #'treemacs-create-workspace
+  "md" #'treemacs-delete-file
+  "mf" '(:ignore t :wk "files")
+  "mff" #'treemacs-find-file
+  "mft" #'treemacs-find-tag
+  "ml" '(:ignore t :wk "lsp")
+  "mls" #'treemacs-expand-lsp-symbol
+  "mld" #'treemacs-expand-lsp-treemacs-deps
+  "mlD" #'treemacs-collapse-lsp-treemacs-deps
+  "mlS" #'treemacs-collapse-lsp-symbol
+  "mp" '(:ignore t :wk "projects")
+  "mpa" #'treemacs-add-project
+  "mpf" #'treemacs-project-follow-mode
+  "mpn" #'treemacs-project-of-node
+  "mpp" #'treemacs-project-at-point
+  "mpr" #'treemacs-remove-project-from-workspace
+  "mpt" #'treemacs-move-project-down
+  "mps" #'treemacs-move-project-up
+  "mr" '(:ignore t :wk "rename")
+  "mrf" #'treemacs-rename-file
+  "mrp" #'treemacs-rename-project
+  "mrr" #'treemacs-rename
+  "mrw" #'treemacs-rename-workspace
+  "mt" #'treemacs
+  "mT" '(:ignore t :wk "toggles")
+  "mTd" #'treemacs-toggle-show-dotfiles
+  "mTn" #'treemacs-toggle-node
+  "mv" '(:ignore t :wk "visit node")
+  "mva" #'treemacs-visit-node-ace
+  "mvc" #'treemacs-visit-node-close-treemacs
+  "mvn" #'treemacs-visit-node-default
+  "my" '(:ignore t :wk "yank")
+  "mya" #'treemacs-copy-absolute-path-at-point
+  "myp" #'treemacs-copy-project-path-at-point
+  "myr" #'treemacs-copy-relative-path-at-point
+  "myf" #'treemacs-copy-file
 
   "b" '(:ignore t :wk "buffers")
   "bb" #'bufler-switch-buffer
@@ -4694,6 +4710,14 @@ Spell Commands^^           Add To Dictionary^^              Other
   "alO" #'leetcode-show-problem-by-slub
   "alS" #'leetcode-submit
   "als" #'leetcode-show-problem
+  "l" '(:ignore t :wk "quit")
+  "ll" #'lsp
+  "lts" #'lsp-treemacs-symbols
+  "lte" #'lsp-treemacs-errors-list
+  "ltr" #'lsp-treemacs-references
+  "ld" #'xref-find-definitions
+  "lr" #'xref-find-references
+  "lD" #'lsp-find-declaration
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)

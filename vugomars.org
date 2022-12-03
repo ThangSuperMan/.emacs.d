@@ -2667,15 +2667,8 @@ you’re not sure or if you don’t remember what your snippet is.
 #+end_src
 
 ** Applications
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications94i0fl6184j0
-:END:
 *** Docker
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Applications-Docker5ul0fl6184j0
-:END:
-Docker is an awesome tool for reproducible development environments.
-Due to this, I absolutely need a mode for editing Dockerfiles.
+Docker is an awesome tool for reproducible development environments. Due to this, I absolutely need a mode for editing Dockerfiles.
 #+begin_src emacs-lisp
 (use-package dockerfile-mode
   :defer t
@@ -2686,8 +2679,7 @@ Due to this, I absolutely need a mode for editing Dockerfiles.
   :mode "Dockerfile\\'")
 #+end_src
 
-The ~docker~ package also provides interactivity with Docker and
-docker-compose from Emacs.
+The ~docker~ package also provides interactivity with Docker and docker-compose from Emacs.
 #+begin_src emacs-lisp
 (use-package docker
   :defer t
@@ -2948,11 +2940,7 @@ Forge acts as an interface for Github, Gitlab, and Bitbucket inside Magit. A lot
 #+end_src
 
 **** Projectile
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Project-Management-Projectilesvr5fl6184j0
-:END:
-First, I need to install ~ripgrep~, a faster reimplementation of ~grep~,
-which will be very useful when managing projects.
+First, I need to install ~ripgrep~, a faster reimplementation of ~grep~, which will be very useful when managing projects.
 #+begin_src emacs-lisp
 (use-package ripgrep
   :if (executable-find "rg")
@@ -3440,6 +3428,34 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
        (save-excursion (hs-show-all))
        (setq this-command 'hs-global-show))
       (_ (hs-hide-all))))
+#+end_src
+
+*** Eyebrown
+#+begin_src emacs-lisp
+  (use-package eyebrowse
+    :straight (:build t)
+    :config
+    (setq eyebrowse-new-workspace t)
+    (eyebrowse-mode 1))
+
+  (dqv/leader-key
+   "TAB"  '(:ignore t :which-key "Window Management")
+   "TAB 0" '(eyebrowse-switch-to-window-config-0 :which-key "Select Windown 0")
+   "TAB 1" '(eyebrowse-switch-to-window-config-1 :which-key "Select Window 1")
+   "TAB 2" '(eyebrowse-switch-to-window-config-2 :which-key "Select Window 2")
+   "TAB 3" '(eyebrowse-switch-to-window-config-3 :which-key "Select Window 3")
+   "TAB 4" '(eyebrowse-switch-to-window-config-4 :which-key "Select Window 4")
+   "TAB 5" '(eyebrowse-switch-to-window-config-5 :which-key "Select Window 5")
+   "TAB 6" '(eyebrowse-switch-to-window-config-6 :which-key "Select Window 6")
+   "TAB 7" '(eyebrowse-switch-to-window-config-7 :which-key "Select Window 7")
+   "TAB 8" '(eyebrowse-switch-to-window-config-8 :which-key "Select Window 8")
+   "TAB 9" '(eyebrowse-switch-to-window-config-9 :which-key "Select Window 9")
+   "TAB r" '(eyebrowse-rename-window-config :which-key "Rename Window")
+   "TAB n" '(eyebrowse-create-window-config :which-key "Create New Window")
+   "TAB TAB" '(eyebrowse-switch-to-window-config :which-key "Switch Window")
+   "TAB d" '(eyebrowse-close-window-config :which-key "Delete Window")
+   "TAB j" '(eyebrowse-next-window-config :which-key "Next Window")
+   "TAB k" '(eyebrowse-prev-window-config :which-key "Previous Window"))
 #+end_src
 
 ** Emacs built-ins
@@ -4170,20 +4186,6 @@ From Doom Emacs’ configuration:
   :straight (:build t))
 #+end_src
 
-**** Appwrite
-[[https://appwrite.io][Appwrite]] is an open-source and self-hostable alternative to Firebase. I am currently working on a server SDK for Appwrite in Emacs, so here it is.
-#+begin_src emacs-lisp
-(use-package appwrite
-  :defer t
-  :straight (appwrite :build t
-                      :type git
-                      :host github
-                      :repo "Phundrak/appwrite.el")
-  :config
-  (csetq appwrite-endpoint "https://appwrite.phundrak.com"
-         appwrite-devel t))
-#+end_src
-
 **** Databases
 A really cool tool in Emacs for manipulating databases is ~emacsql~. It’s able to manipulate Sqlite databases by default, but it’s also possible to manipulate MariaDB and PostgreSQL databases by installing additional packages. For now, I just need Sqlite and PostgreSQL interfaces, so let’s install the relevant packages.
 #+begin_src emacs-lisp
@@ -4261,17 +4263,18 @@ LanguageTool is a great tool for catching typos and grammatical errors in quite 
   (setq langtool-java-classpath (string-join '("/usr/share/languagetool"
                                                "/usr/share/java/languagetool/*")
                                              ":"))
-  :general
-  (dqv/leader-key
-    :packages 'langtool
-    :infix "l"
-    ""  '(:ignore t :which-key "LangTool")
-    "B" #'langtool-correct-buffer
-    "b" #'langtool-check-buffer
-    "c" #'langtool-check
-    "d" #'langtool-check-done
-    "l" #'langtool-switch-default-language
-    "p" #'langtool-show-message-at-point))
+  ;;:general
+  ;; (dqv/leader-key
+  ;;   :packages 'langtool
+  ;;   :infix "l"
+  ;;   ""  '(:ignore t :which-key "LangTool")
+  ;;   "B" #'langtool-correct-buffer
+  ;;   "b" #'langtool-check-buffer
+  ;;   "c" #'langtool-check
+  ;;   "d" #'langtool-check-done
+  ;;   "l" #'langtool-switch-default-language
+  ;;   "p" #'langtool-show-message-at-point)
+)
 #+end_src
 
 #+begin_src emacs-lisp
@@ -5987,12 +5990,12 @@ For now, I disabled the hook with org-mode and markdown-mode because it slows do
 *** Secret mode
 Sometimes, I want to hide the text displayed by Emacs but not lock altogether my computer. In this case, ~secret-mode~ comes in handy.
 #+begin_src emacs-lisp
-(use-package secret-mode
+(use-package redacted-mode
   :defer t
   :straight (secret-mode :build t
                          :type git
                          :host github
-                         :repo "bkaestner/secret-mode.el"))
+                         :repo "bkaestner/redacted.el"))
 #+end_src
 
 *** Solaire: Incandescent Emacs
@@ -6519,7 +6522,7 @@ Undefining some stuff to make keybind prefixes work correctly.
 
   <<general-keybindings-gen(table=keybinds-apps, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-apps-shell, prefix="as")>>
-  <<general-keybindings-gen(table=treemacs-keybinds, prefix="at")>>
+  <<general-keybindings-gen(table=treemacs-keybinds, prefix="m")>>
 
   <<general-keybindings-gen(table=keybinds-buffers, prefix="b")>>
 
@@ -6549,6 +6552,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   <<general-keybindings-gen(table=keybinds-roam, prefix="n")>>
 
   <<general-keybindings-gen(table=keybinds-leetcode, prefix="a")>>
+  <<general-keybindings-gen(table=keybinds-lsp, prefix="l")>>
 
   "u"   #'universal-argument
   "U"   #'undo-tree-visualize)
@@ -6809,6 +6813,20 @@ A couple of keybinds are hidden from roam mode & bookmark, They are prefixed wit
 | bj  | bookmark-jump                     |              |
 | bi  | bookmark-insert                   |              |
 | bl  | bookmark-bmenu-list               |              |
+
+** LSP
+A couple of keybinds are use for application leetcode, They are prefixed with ~l~.
+#+name: keybinds-lsp
+| Key | Function                 | Description |
+|-----+--------------------------+-------------|
+|     |                          | quit        |
+| l   | lsp                      |             |
+| ts  | lsp-treemacs-symbols     |             |
+| te  | lsp-treemacs-errors-list |             |
+| tr  | lsp-treemacs-references  |             |
+| d   | xref-find-definitions    |             |
+| r   | xref-find-references     |             |
+| D   | lsp-find-declaration     |             |
 
 ** Leetcode
 A couple of keybinds are use for application leetcode, They are prefixed with ~a~.
