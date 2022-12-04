@@ -169,38 +169,12 @@ the user."
 
   (use-package emojify
     :straight (:build t)
-    :general
-    (dqv/leader-keys
-      "i e" '(emojify-insert-emoji :wk "Emoji"))
     :custom
     (emojify-emoji-set "emojione-v2.2.6")
     (emojify-emojis-dir (concat user-emacs-directory "emojify/"))
     (emojify-display-style 'image)
     :config
     (global-emojify-mode 1))
-
-;; (defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
-;;   (let* ((block-idx (cl-position-if
-;;                          (lambda (i) (string-equal (car i) block-name))
-;;                          unicode-fonts-block-font-mapping))
-;;          (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
-;;          (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
-;;     (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
-;;           `(,updated-block))))
-
-;; (use-package unicode-fonts
-;;   :custom
-;;   (unicode-fonts-skip-font-groups '(low-quality-glyphs))
-;;   :config
-;;   ;; Fix the font mappings to use the right emoji font
-;;   (mapcar
-;;     (lambda (block-name)
-;;       (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
-;;     '("Dingbats"
-;;       "Emoticons"
-;;       "Miscellaneous Symbols and Pictographs"
-;;       "Transport and Map Symbols"))
-;;   (unicode-fonts-setup))
 
 (setq frame-title-format
       '(""
@@ -1367,7 +1341,7 @@ the value `split-window-right', then it will be changed to
 (setq plstore-cache-passphrase-for-symmetric-encryption t)
 
 (use-package org-gcal
-  :straight (:build t))
+  :straight t)
 
 (setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
       org-gcal-client-secret "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"
@@ -1401,23 +1375,39 @@ the value `split-window-right', then it will be changed to
   :config
   (org-roam-setup))
 
-(alert-add-rule :status   '(buried visible idle)
-                :severity '(moderate high urgent)
-                :mode     'erc-mode
-                :predicate
-                #'(lambda (info)
-                    (string-match (concat "\\`[^&].*@BitlBee\\'")
-                                  (erc-format-target-and/or-network)))
-                :persistent
-                #'(lambda (info)
-                    ;; If the buffer is buried, or the user has been
-                    ;; idle for `alert-reveal-idle-time' seconds,
-                    ;; make this alert persistent.  Normally, alerts
-                    ;; become persistent after
-                    ;; `alert-persist-idle-time' seconds.
-                    (memq (plist-get info :status) '(buried idle)))
-                :style 'fringe
-                :continue t)
+(require 'appt)
+
+(setq appt-time-msg-list nil)    ;; clear existing appt list
+(setq appt-display-interval '5)  ;; warn every 5 minutes from t - appt-message-warning-time
+(setq
+  appt-message-warning-time '15  ;; send first warning 15 minutes before appointment
+  appt-display-mode-line nil     ;; don't show in the modeline
+  appt-display-format 'window)   ;; pass warnings to the designated window function
+(setq appt-disp-window-function (function dqv/appt-display-native))
+
+(appt-activate 1)                ;; activate appointment notification
+; (display-time) ;; Clock in modeline
+
+(defun dqv/send-notification (title msg)
+  (let ((notifier-path (executable-find "alerter")))
+       (start-process
+           "Appointment Alert"
+           "*Appointment Alert*" ; use `nil` to not capture output; this captures output in background
+           notifier-path
+           "-message" msg
+           "-title" title
+           "-sender" "org.gnu.Emacs"
+           "-activate" "org.gnu.Emacs")))
+(defun dqv/appt-display-native (min-to-app new-time msg)
+  (dqv/send-notification
+    (format "Appointment in %s minutes" min-to-app) ; Title
+    (format "%s" msg)))                             ; Message/detail text
+
+
+;; Agenda-to-appointent hooks
+(org-agenda-to-appt)             ;; generate the appt list from org agenda files on emacs launch
+(run-at-time "24:01" 3600 'org-agenda-to-appt)           ;; update appt list hourly
+(add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
 
 (use-package company
   :straight (:build t)
