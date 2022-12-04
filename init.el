@@ -1736,6 +1736,7 @@ the value `split-window-right', then it will be changed to
     "p" #'hl-todo-previous))
 
 (use-package magit-todos
+  :defer t
   :straight (:build t)
   :after (magit hl-todo)
   :init
@@ -1749,7 +1750,9 @@ deactivate `magit-todos-mode', otherwise enable it."
        (magit-todos-mode +1)))
    (add-hook 'magit-mode-hook #'my/magit-todos-if-not-yadm))
   :config
-  (csetq magit-todos-ignore-case t))
+  (csetq magit-todos-ignore-case t)
+(setq magit-todos-keyword-suffix "\\(?:([^)]+)\\)?:")
+)
 
 (use-package magit-gitflow
   :defer t

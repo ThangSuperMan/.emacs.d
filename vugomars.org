@@ -2829,6 +2829,7 @@ First, let’s setup our todo keywords with ~hl-todo~. A good few todo keywords 
 We can now configure properly ~magit-todos~. Notice my custom function hooked to ~magit-mode-hook~. This is because this package tries to find TODOs in all files in the current project, and my yadm repository’s root is my ~$HOME~. So, yeah, no ~magit-todos~ in yadm.
 #+begin_src emacs-lisp
 (use-package magit-todos
+  :defer t
   :straight (:build t)
   :after (magit hl-todo)
   :init
@@ -2842,7 +2843,9 @@ deactivate `magit-todos-mode', otherwise enable it."
        (magit-todos-mode +1)))
    (add-hook 'magit-mode-hook #'my/magit-todos-if-not-yadm))
   :config
-  (csetq magit-todos-ignore-case t))
+  (csetq magit-todos-ignore-case t)
+(setq magit-todos-keyword-suffix "\\(?:([^)]+)\\)?:")
+)
 #+end_src
 
 ***** Gitflow
@@ -6823,5 +6826,5 @@ A couple of keybinds are use for application leetcode, They are prefixed with ~a
 | lS  | leetcode-submit                  |             |
 | ls  | leetcode-show-problem            |             |
 
-* TODOs                                                            :noexport:
+* TODOs
 ** TODO Get started with org-roam
