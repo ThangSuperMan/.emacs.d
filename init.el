@@ -164,8 +164,8 @@ the user."
                       :height 160
                       :weight 'light)
 
-  (set-fontset-font t 'symbol "Noto Color Emoji")
-  (set-fontset-font t 'symbol "Symbola" nil 'append)
+  ;;(set-fontset-font t 'symbol "Noto Color Emoji")
+  ;;(set-fontset-font t 'symbol "Symbola" nil 'append)
 
   (use-package emojify
     :straight (:build t)
@@ -179,28 +179,28 @@ the user."
     :config
     (global-emojify-mode 1))
 
-(defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
-  (let* ((block-idx (cl-position-if
-                         (lambda (i) (string-equal (car i) block-name))
-                         unicode-fonts-block-font-mapping))
-         (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
-         (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
-    (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
-          `(,updated-block))))
+;; (defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
+;;   (let* ((block-idx (cl-position-if
+;;                          (lambda (i) (string-equal (car i) block-name))
+;;                          unicode-fonts-block-font-mapping))
+;;          (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
+;;          (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
+;;     (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
+;;           `(,updated-block))))
 
-(use-package unicode-fonts
-  :custom
-  (unicode-fonts-skip-font-groups '(low-quality-glyphs))
-  :config
-  ;; Fix the font mappings to use the right emoji font
-  (mapcar
-    (lambda (block-name)
-      (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
-    '("Dingbats"
-      "Emoticons"
-      "Miscellaneous Symbols and Pictographs"
-      "Transport and Map Symbols"))
-  (unicode-fonts-setup))
+;; (use-package unicode-fonts
+;;   :custom
+;;   (unicode-fonts-skip-font-groups '(low-quality-glyphs))
+;;   :config
+;;   ;; Fix the font mappings to use the right emoji font
+;;   (mapcar
+;;     (lambda (block-name)
+;;       (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
+;;     '("Dingbats"
+;;       "Emoticons"
+;;       "Miscellaneous Symbols and Pictographs"
+;;       "Transport and Map Symbols"))
+;;   (unicode-fonts-setup))
 
 (setq frame-title-format
       '(""

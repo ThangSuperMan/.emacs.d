@@ -118,6 +118,7 @@ The early init file is the file loaded before anything else in Emacs. This is wh
       delete-by-moving-to-trash t)
 
 (defalias 'yes-or-no-p 'y-or-n-p)
+(setq debug-on-error t)
 
 (setq epg-gpg-program "gpg2")
 
@@ -477,8 +478,8 @@ Now, let’s automate the call to this function in order to apply the modificati
 
 **** Emojis
 #+begin_src emacs-lisp
-  (set-fontset-font t 'symbol "Noto Color Emoji")
-  (set-fontset-font t 'symbol "Symbola" nil 'append)
+  ;;(set-fontset-font t 'symbol "Noto Color Emoji")
+  ;;(set-fontset-font t 'symbol "Symbola" nil 'append)
 
   (use-package emojify
     :straight (:build t)
@@ -495,28 +496,28 @@ Now, let’s automate the call to this function in order to apply the modificati
 
 **** Unicode
 #+begin_src emacs-lisp
-(defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
-  (let* ((block-idx (cl-position-if
-                         (lambda (i) (string-equal (car i) block-name))
-                         unicode-fonts-block-font-mapping))
-         (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
-         (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
-    (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
-          `(,updated-block))))
+;; (defun dqv/replace-unicode-font-mapping (block-name old-font new-font)
+;;   (let* ((block-idx (cl-position-if
+;;                          (lambda (i) (string-equal (car i) block-name))
+;;                          unicode-fonts-block-font-mapping))
+;;          (block-fonts (cadr (nth block-idx unicode-fonts-block-font-mapping)))
+;;          (updated-block (cl-substitute new-font old-font block-fonts :test 'string-equal)))
+;;     (setf (cdr (nth block-idx unicode-fonts-block-font-mapping))
+;;           `(,updated-block))))
 
-(use-package unicode-fonts
-  :custom
-  (unicode-fonts-skip-font-groups '(low-quality-glyphs))
-  :config
-  ;; Fix the font mappings to use the right emoji font
-  (mapcar
-    (lambda (block-name)
-      (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
-    '("Dingbats"
-      "Emoticons"
-      "Miscellaneous Symbols and Pictographs"
-      "Transport and Map Symbols"))
-  (unicode-fonts-setup))
+;; (use-package unicode-fonts
+;;   :custom
+;;   (unicode-fonts-skip-font-groups '(low-quality-glyphs))
+;;   :config
+;;   ;; Fix the font mappings to use the right emoji font
+;;   (mapcar
+;;     (lambda (block-name)
+;;       (dqv/replace-unicode-font-mapping block-name "Apple Color Emoji" "Noto Color Emoji"))
+;;     '("Dingbats"
+;;       "Emoticons"
+;;       "Miscellaneous Symbols and Pictographs"
+;;       "Transport and Map Symbols"))
+;;   (unicode-fonts-setup))
 #+end_src
 
 *** Frame Title
