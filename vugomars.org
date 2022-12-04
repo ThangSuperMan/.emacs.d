@@ -240,24 +240,17 @@ I *never* want to keep trailing spaces in my files, which is why I’m doing thi
 (add-hook 'before-save-hook #'whitespace-cleanup)
 #+end_src
 
-I don’t understand why some people add two spaces behind a full stop,
-I sure don’t. Let’s tell Emacs.
+I don’t understand why some people add two spaces behind a full stop, I sure don’t. Let’s tell Emacs.
 #+begin_src emacs-lisp
 (setq-default sentence-end-double-space nil)
 #+end_src
 
-There is a minor mode in Emacs which allows to have a finer way of
-jumping from word to word: ~global-subword-mode~. It detects if what
-Emacs usually considers a word can be understood as several words, as
-in camelCase words, and allows us to jump words on this finer level.
+There is a minor mode in Emacs which allows to have a finer way of jumping from word to word: ~global-subword-mode~. It detects if what Emacs usually considers a word can be understood as several words, as in camelCase words, and allows us to jump words on this finer level.
 #+begin_src emacs-lisp
 (global-subword-mode 1)
 #+end_src
 
-Changing half my screen each time my cursor goes too high or too low
-is not exactly ideal. Fortunately, if we set ~scroll-conservatively~
-high enough we can have the cursor stay on top or at the bottom of the
-screen while the text scrolls progressively.
+Changing half my screen each time my cursor goes too high or too low is not exactly ideal. Fortunately, if we set ~scroll-conservatively~ high enough we can have the cursor stay on top or at the bottom of the screen while the text scrolls progressively.
 #+begin_src emacs-lisp
 (setq scroll-conservatively 1000)
 #+end_src
@@ -1106,17 +1099,6 @@ transparency.
   ("q" nil :exit t)
   ("j" my/decrease-frame-alpha-background)
   ("k" my/increase-frame-alpha-background))
-#+end_src
-
-* Function Decleration
-** Kill Other Buffer
-#+begin_src emacs-lisp
-(defun dqv/kill-other-buffers ()
-  "Kill all other buffers."
-  (interactive)
-  (mapc 'kill-buffer
-        (delq (current-buffer)
-              (remove-if-not 'buffer-file-name (buffer-list)))))
 #+end_src
 
 * Org-mode

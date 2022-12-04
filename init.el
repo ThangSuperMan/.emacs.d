@@ -613,13 +613,6 @@ With a prefix argument, TRASH is nil."
   ("j" my/decrease-frame-alpha-background)
   ("k" my/increase-frame-alpha-background))
 
-(defun dqv/kill-other-buffers ()
-  "Kill all other buffers."
-  (interactive)
-  (mapc 'kill-buffer
-        (delq (current-buffer)
-              (remove-if-not 'buffer-file-name (buffer-list)))))
-
 (use-package citeproc
   :after (org)
   :defer t
