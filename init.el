@@ -1351,6 +1351,24 @@ the value `split-window-right', then it will be changed to
                                   ("3c86ecf75197c0493e3773371e8f12baa7196203379112e995829cd31a01a00d@group.calendar.google.com" .  "~/Dropbox/Org/Social.org")
                                   ("tau3ru1gb0ljd6chsijg4vr6c4@group.calendar.google.com" .  "~/Dropbox/Org/Work.org")))
 
+(defun my-org-gcal-set-effort (_calendar-id event _update-mode)
+  "Set Effort property based on EVENT if not already set."
+  (when-let* ((stime (plist-get (plist-get event :start)
+                           :dateTime))
+              (etime (plist-get (plist-get event :end)
+                                :dateTime))
+              (diff (float-time
+                     (time-subtract (org-gcal--parse-calendar-time-string etime)
+                                    (org-gcal--parse-calendar-time-string stime))))
+              (minutes (floor (/ diff 60))))
+    (let ((effort (org-entry-get (point) org-effort-property)))
+      (unless effort
+        (message "need to set effort - minutes %S" minutes)
+        (org-entry-put (point)
+                       org-effort-property
+                       (apply #'format "%d:%02d" (cl-floor minutes 60)))))))
+(add-hook 'org-gcal-after-update-entry-functions #'my-org-gcal-set-effort)
+
 (use-package org-roam
   :ensure t
   :hook (after-init . org-roam-mode)
@@ -1383,7 +1401,6 @@ the value `split-window-right', then it will be changed to
   appt-message-warning-time '15  ;; send first warning 15 minutes before appointment
   appt-display-mode-line nil     ;; don't show in the modeline
   appt-display-format 'window)   ;; pass warnings to the designated window function
-(setq appt-disp-window-function (function dqv/appt-display-native))
 
 (appt-activate 1)                ;; activate appointment notification
 ; (display-time) ;; Clock in modeline
@@ -1403,6 +1420,7 @@ the value `split-window-right', then it will be changed to
     (format "Appointment in %s minutes" min-to-app) ; Title
     (format "%s" msg)))                             ; Message/detail text
 
+(setq appt-disp-window-function (function dqv/appt-display-native))
 
 ;; Agenda-to-appointent hooks
 (org-agenda-to-appt)             ;; generate the appt list from org agenda files on emacs launch
