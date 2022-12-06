@@ -796,8 +796,16 @@ With a prefix argument, TRASH is nil."
                                 ("#+AUTHOR:"   . ?✎)
                                 ("#+email:"    . ?📧)
                                 ("#+EMAIL:"    . ?📧)
-                                ("#+include"   . ?⭳)
-                                ("#+INCLUDE"   . ?⭳)
+                                ("#+property:"    . ?☸)
+                                ("#+PROPERTY:"    . ?☸)
+                                ("#+html_head:"     . ?🅷)
+                                ("#+HTML_HEAD:"     . ?🅷)
+                                ("#+html:"          . ?🅗)
+                                ("#+HTML:"          . ?🅗)
+                                ("#+results:"       . ?▶)
+                                ("#+RESULTS:"       . ?▶)
+                                ("#+include:"   . ?⇤)
+                                ("#+INCLUDE:"   . ?⇤)
                                 ("#+begin_src" . ?λ)
                                 ("#+BEGIN_SRC" . ?λ)
                                 ("#+end_src"   . ?λ)
@@ -1295,8 +1303,16 @@ the value `split-window-right', then it will be changed to
                             ("#+AUTHOR:"   . ?✎)
                             ("#+email:"    . ?📧)
                             ("#+EMAIL:"    . ?📧)
-                            ("#+include"   . ?⭳)
-                            ("#+INCLUDE"   . ?⭳)
+                            ("#+property:"    . ?☸)
+                            ("#+PROPERTY:"    . ?☸)
+                            ("#+html_head:"     . ?🅷)
+                            ("#+HTML_HEAD:"     . ?🅷)
+                            ("#+html:"          . ?🅗)
+                            ("#+HTML:"          . ?🅗)
+                            ("#+results:"       . ?▶)
+                            ("#+RESULTS:"       . ?▶)
+                            ("#+include:"   . ?⇤)
+                            ("#+INCLUDE:"   . ?⇤)
                             ("#+begin_src" . ?λ)
                             ("#+BEGIN_SRC" . ?λ)
                             ("#+end_src"   . ?λ)
@@ -1341,7 +1357,9 @@ the value `split-window-right', then it will be changed to
 (setq plstore-cache-passphrase-for-symmetric-encryption t)
 
 (use-package org-gcal
-  :straight t)
+  :straight t
+  :config
+  (setq org-gcal-remove-api-cancelled-events t))
 
 (setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
       org-gcal-client-secret "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"

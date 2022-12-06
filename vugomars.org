@@ -1,4 +1,4 @@
-#+title: Emacs Configuration
+#+title: Emacs Configuratio
 #+AUTHOR: =Dang Quang Vu=
 #+EMAIL: vugomars@gmail.com
 #+SUBTITLE: Emacs configuration for work and life
@@ -2207,8 +2207,16 @@ to anything user-defined. Let’s all-the-iconify this!
                             ("#+AUTHOR:"   . ?✎)
                             ("#+email:"    . ?📧)
                             ("#+EMAIL:"    . ?📧)
-                            ("#+include"   . ?⭳)
-                            ("#+INCLUDE"   . ?⭳)
+                            ("#+property:"    . ?☸)
+                            ("#+PROPERTY:"    . ?☸)
+                            ("#+html_head:"     . ?🅷)
+                            ("#+HTML_HEAD:"     . ?🅷)
+                            ("#+html:"          . ?🅗)
+                            ("#+HTML:"          . ?🅗)
+                            ("#+results:"       . ?▶)
+                            ("#+RESULTS:"       . ?▶)
+                            ("#+include:"   . ?⇤)
+                            ("#+INCLUDE:"   . ?⇤)
                             ("#+begin_src" . ?λ)
                             ("#+BEGIN_SRC" . ?λ)
                             ("#+end_src"   . ?λ)
@@ -2216,6 +2224,9 @@ to anything user-defined. Let’s all-the-iconify this!
               (add-to-list 'prettify-symbols-alist pair))
             (prettify-symbols-mode)))
 #+end_src
+
+#+RESULTS: org-mode-visual-prettify-symbols
+| (closure (t) nil (dolist (pair '(([ ] . 9744) ([X] . 9745) ([-] . 10061) (#+title . 128213) (#+TITLE . 128213) (#+author . 9998) (#+AUTHOR . 9998) (#+email . 64) (#+EMAIL . 64) (#+property . ☸) (#+PROPERTY . ☸) (#+html_head . 🅷) (#+HTML_HEAD . 🅷) (#+html . 🅗) (#+HTML . 🅗) (#+results . ) (#+RESULTS . ) (#+include . 11123) (#+INCLUDE . 11123) (#+begin_src . 955) (#+BEGIN_SRC . 955) (#+end_src . 955) (#+END_SRC . 955))) (add-to-list 'prettify-symbols-alist pair)) (prettify-symbols-mode)) | toc-org-enable | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | org-fancy-priorities-mode | git-gutter-mode | writegood-mode | org-ref-org-menu | org-modern-mode | org-fragtog-mode | org-appear-mode | mixed-pitch-mode | (closure (bootstrap-version t) nil (require 'org-ref)) | evil-org-mode | (closure (bootstrap-version t) nil (require 'org-re-reveal)) | (closure (bootstrap-version t) nil (interactive) (electric-indent-local-mode -1)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | dqv/org-mode-visual-fill | (closure (bootstrap-version t) nil (let ((--dolist-tail-- '(([ ] . 9744) ([X] . 9745) ([-] . 10061) (#+title . 128213) (#+TITLE . 128213) (#+author . 9998) (#+AUTHOR . 9998) (#+email . 64) (#+EMAIL . 64) (#+property . ☸) (#+PROPERTY . ☸) (#+html_head . 🅷) (#+HTML_HEAD . 🅷) (#+html . 🅗) (#+HTML . 🅗) (#+results . ) (#+RESULTS . ) (#+include . 11123) (#+INCLUDE . 11123) (#+begin_src . 955) (#+BEGIN_SRC . 955) (#+end_src . 955) (#+END_SRC . 955)))) (while --dolist-tail-- (let ((pair (car --dolist-tail--))) (add-to-list 'prettify-symbols-alist pair) (setq --dolist-tail-- (cdr --dolist-tail--))))) (prettify-symbols-mode)) | org-eldoc-load | org-num-mode | visual-line-mode | (closure ((mode . org-mode-hook) (--dolist-tail--) bootstrap-version t) nil (display-line-numbers-mode 0)) |
 
 *** Visual Fill Colume
 #+begin_src emacs-lisp
@@ -2269,7 +2280,9 @@ to anything user-defined. Let’s all-the-iconify this!
 (setq plstore-cache-passphrase-for-symmetric-encryption t)
 
 (use-package org-gcal
-  :straight t)
+  :straight t
+  :config
+  (setq org-gcal-remove-api-cancelled-events t))
 
 (setq org-gcal-client-id "956221325874-3do4u85pu4s6br8dnlgjgumaje8b0mrg.apps.googleusercontent.com"
       org-gcal-client-secret "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"

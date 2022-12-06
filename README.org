@@ -16,14 +16,3 @@ Emacs is everything i need for a Good =text editor=.
 #+end_quote
 
 + My Configuration is inspired by some people, some configuration different. So sometimes you can see this code somewhere on the internet. But I have edited a lot to suit my preferences, if you want to use them you should be reconfigure according to your personal preferences.
-
-#+begin_src rust
-fn main() {
-    fn add() {}
-}
-#+end_src
-
-[[https://www.facebook.com/dangquangvu94/][Facebook cua tao]]
-
-hinh bun
-[[https://scontent.fdad3-1.fna.fbcdn.net/v/t39.30808-6/291567825_968609677240808_2958715517488696093_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=e3f864&_nc_ohc=bRX4EnJJvNAAX-NRqOD&_nc_ht=scontent.fdad3-1.fna&oh=00_AfDxqNr6I8qM-34xn5jGskPZKsoW8_i5bbv_oZ_8qQSwrg&oe=638CC176]]
