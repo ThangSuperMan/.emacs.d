@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: export const
+# key: exc
+# --
+export const ${1:Name} = ({${2:param}: {$2: ${3:types}}})${4:type} => {
+       $0
+}

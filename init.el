@@ -176,14 +176,6 @@ the user."
     :config
     (global-emojify-mode 1))
 
-(setq frame-title-format
-      '(""
-        "%b"
-        (:eval
-         (let ((project-name (projectile-project-name)))
-           (unless (string= "-" project-name)
-             (format (if (buffer-modified-p) " ◉ %s" "  ●  %s - Emacs") project-name))))))
-
 ;; Use moody for the mode bar
 (use-package moody
   :straight (:build t)
@@ -380,6 +372,13 @@ With a prefix argument, TRASH is nil."
       (interactive)
       (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
+(defun browse-file-directory ()
+  "Open the current file's directory however the OS would."
+  (interactive)
+  (if default-directory
+      (browse-url-of-file (expand-file-name default-directory))
+    (error "No `default-directory' to open")))
+
 (use-package which-key
   :straight (:build t)
   :defer t
@@ -526,18 +525,6 @@ With a prefix argument, TRASH is nil."
 (use-package hydra
   :straight (:build t)
   :defer t)
-
-(defhydra hydra-zoom ()
-  "
-^Zoom^                 ^Other
-^^^^^^^--------------------------
-[_j_/_k_] zoom in/out  [_q_] quit
-[_0_]^^   reset zoom
-"
-  ("j" text-scale-increase "zoom in")
-  ("k" text-scale-decrease "zoom out")
-  ("0" text-scale-adjust "reset")
-  ("q" nil "finished" :exit t))
 
 (defhydra windows-adjust-size ()
   "
@@ -2244,7 +2231,8 @@ deactivate `magit-todos-mode', otherwise enable it."
      ("C" "~/Documents/conlanging/content" "Conlanging")))
   (dirvish-mode-line-format
    '(:left (sort file-time "" file-size symlink) :right (omit yank index)))
-  (dirvish-attributes '(all-the-icons file-size collapse subtree-state vc-state git-msg))
+   (dirvish-attributes '(all-the-icons file-size  subtree-state  git-msg))
+;; collapse vc-state
   :config
   (dirvish-peek-mode)
   (csetq dired-mouse-drag-files                   t
@@ -2725,6 +2713,8 @@ deactivate `magit-todos-mode', otherwise enable it."
                         company-backends)))
   (add-hook 'TeX-mode-hook #'my-latex-mode-setup))
 
+(use-package tsc
+  :straight (:build t))
 (use-package tree-sitter
   :defer t
   :straight (:build t)
@@ -4499,6 +4489,7 @@ Spell Commands^^           Add To Dictionary^^              Other
 
   (dqv/evil
     :packages '(counsel)
+    "K"   #'eldoc-doc-buffer
     "U"   #'evil-redo
     "C-a" #'beginning-of-line
     "C-e" #'end-of-line
@@ -4513,6 +4504,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
   "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
   "oa" '(org-agenda :wk "Agenda")
+  "of" '(browser-file-directory :wk "Open File in Directory")
 
   "a" '(:ignore t :wk "apps")
   "ac" #'calc
@@ -4536,8 +4528,11 @@ Spell Commands^^           Add To Dictionary^^              Other
   "mcf" #'treemacs-create-file
   "mci" #'treemacs-create-icon
   "mct" #'treemacs-create-theme
-  "mcw" #'treemacs-create-workspace
   "md" #'treemacs-delete-file
+  "mw" '(:ignore t :wk "wordspace")
+  "mws" #'treemacs-switch-workspace
+  "mwc" #'treemacs-create-workspace
+  "mwr" #'treemacs-remove-workspace
   "mf" '(:ignore t :wk "files")
   "mff" #'treemacs-find-file
   "mft" #'treemacs-find-tag
@@ -4614,6 +4609,7 @@ Spell Commands^^           Add To Dictionary^^              Other
             (interactive)
             (find-file (concat user-emacs-directory "init.el")))
           :which-key "init.el")
+  
   "fR"  '((lambda ()
             (interactive)
             (counsel-find-file ""

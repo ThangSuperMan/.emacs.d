@@ -225,8 +225,8 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; Set Transparency
-(set-frame-parameter (selected-frame) 'alpha '(99 . 99))
-(add-to-list 'default-frame-alist '(alpha . (99 . 99)))
+(set-frame-parameter (selected-frame) 'alpha '(100 . 100))
+(add-to-list 'default-frame-alist '(alpha . (100 . 100)))
 #+end_src
 
 ** Emacs Behavior
@@ -492,18 +492,6 @@ Now, let’s automate the call to this function in order to apply the modificati
     (global-emojify-mode 1))
 #+end_src
 
-*** Frame Title
-This is straight-up copied from [[https://tecosaur.github.io/emacs-config/config.html#window-title][TEC]]’s configuration. See their comment on the matter.
-#+begin_src emacs-lisp
-(setq frame-title-format
-      '(""
-        "%b"
-        (:eval
-         (let ((project-name (projectile-project-name)))
-           (unless (string= "-" project-name)
-             (format (if (buffer-modified-p) " ◉ %s" "  ●  %s - Emacs") project-name))))))
-#+end_src
-
 *** Moody
 #+begin_src emacs-lisp
 ;; Use moody for the mode bar
@@ -763,6 +751,15 @@ With a prefix argument, TRASH is nil."
       (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 #+end_src
 
+** Open File Directory
+#+begin_src emacs-lisp
+(defun browse-file-directory ()
+  "Open the current file's directory however the OS would."
+  (interactive)
+  (if default-directory
+      (browse-url-of-file (expand-file-name default-directory))
+    (error "No `default-directory' to open")))
+#+end_src
 * Keybinding Management
 ** Which-key
 Which key is, I think, one of my favorite quality of life package. When you begin a keybind, Emacs will show you all keybinds you can follow the first one with in order to form a full keychord. Very useful when you have a lot of keybinds and don’t remember exactly what is what.
@@ -944,13 +941,7 @@ additional code compared to most people due to the bépo layout.
     (evil-collection-init))
 #+end_src
 
-~undo-tree~ is my preferred way of undoing and redoing stuff. The main
-reason is it doesn’t create a linear undo/redo history, but rather a
-complete tree you can navigate to see your complete editing history.
-One of the two obvious things to do are to tell Emacs to save all its
-undo history fies in a dedicated directory, otherwise we’d risk
-littering all of our directories. The second thing is to simply
-globally enable its mode.
+~undo-tree~ is my preferred way of undoing and redoing stuff. The main reason is it doesn’t create a linear undo/redo history, but rather a complete tree you can navigate to see your complete editing history. One of the two obvious things to do are to tell Emacs to save all its undo history fies in a dedicated directory, otherwise we’d risk littering all of our directories. The second thing is to simply globally enable its mode.
 #+begin_src emacs-lisp
 (use-package undo-tree
   :defer t
@@ -972,12 +963,7 @@ globally enable its mode.
         undo-outer-limit  (* 128 1024 1024)))
 #+end_src
 
-An interesting behavior from DoomEmacs is to compress the history
-files with ~zstd~ when it is present on the system. Not only do we enjoy
-much smaller files (according to DoomEmacs, we get something like 80%
-file savings), Emacs can load them much faster than the regular files.
-Sure, it uses more CPU time uncompressing these files, but it’s
-insignificant and it’s still faster than loading a heavier file.
+An interesting behavior from DoomEmacs is to compress the history files with ~zstd~ when it is present on the system. Not only do we enjoy much smaller files (according to DoomEmacs, we get something like 80% file savings), Emacs can load them much faster than the regular files. Sure, it uses more CPU time uncompressing these files, but it’s insignificant and it’s still faster than loading a heavier file.
 #+name: undo-tree-compress-files
 #+begin_src emacs-lisp :tangle no
 (when (executable-find "zstd")
@@ -996,27 +982,6 @@ insignificant and it’s still faster than loading a heavier file.
   :straight (:build t)
   :defer t)
 #+end_src
-
-*** Hydras
-:PROPERTIES:
-:CUSTOM_ID: Keybinding-Management-Hydra-Hydrasvya0fl6184j0
-:END:
-The following hydra allows me to quickly zoom in and out in the
-current buffer.
-#+begin_src emacs-lisp
-(defhydra hydra-zoom ()
-  "
-^Zoom^                 ^Other
-^^^^^^^--------------------------
-[_j_/_k_] zoom in/out  [_q_] quit
-[_0_]^^   reset zoom
-"
-  ("j" text-scale-increase "zoom in")
-  ("k" text-scale-decrease "zoom out")
-  ("0" text-scale-adjust "reset")
-  ("q" nil "finished" :exit t))
-#+end_src
-
 
 Similarly still, this one allows me to manage the size my Emacs windows.
 #+begin_src emacs-lisp
@@ -3485,7 +3450,8 @@ I used to have an extensive configuration for Dired with a couple of additional 
      ("C" "~/Documents/conlanging/content" "Conlanging")))
   (dirvish-mode-line-format
    '(:left (sort file-time "" file-size symlink) :right (omit yank index)))
-  (dirvish-attributes '(all-the-icons file-size collapse subtree-state vc-state git-msg))
+   (dirvish-attributes '(all-the-icons file-size  subtree-state  git-msg))
+;; collapse vc-state
   :config
   (dirvish-peek-mode)
   <<dired-drag-and-drop>>
@@ -3526,22 +3492,22 @@ I used to have an extensive configuration for Dired with a couple of additional 
     "n"   #'dirvish-narrow))
 #+end_src
 
+#+RESULTS:
+
 It requires some programs which can be installed like so:
 #+begin_src sh :dir /sudo::~/ :exports code :tangle no :results verbatim
 pacman -S --needed --noprogressbar --noconfirm --color=never \
        fd poppler ffmpegthumbnailer mediainfo imagemagick tar unzip
 #+end_src
 
-Since Emacs 29, it is possible to enable drag-and-drop between Emacs
-and other applications.
+Since Emacs 29, it is possible to enable drag-and-drop between Emacs and other applications.
 #+name: dired-drag-and-drop
 #+begin_src emacs-lisp :tangle no
 (csetq dired-mouse-drag-files                   t
        mouse-drag-and-drop-region-cross-program t)
 #+end_src
 
-In Dirvish, it’s best to use the long name of flags whenever possible,
-otherwise some commands won’t work.
+In Dirvish, it’s best to use the long name of flags whenever possible, otherwise some commands won’t work.
 #+name: dired-listing-flags
 #+begin_src emacs-lisp :tangle no
 (csetq dired-listing-switches (string-join '("--all"
@@ -3552,9 +3518,7 @@ otherwise some commands won’t work.
                                            " "))
 #+end_src
 
-However, it is possible to instead use ~exa~ when it is available.
-Instead of making Emacs’ main thread to the file listing in a
-directory, we offload it to an external thread.
+However, it is possible to instead use ~exa~ when it is available. Instead of making Emacs’ main thread to the file listing in a directory, we offload it to an external thread.
 #+name: dirvish-exa-offload
 #+begin_src emacs-lisp :tangle no
 (dirvish-define-preview exa (file)
@@ -3583,11 +3547,7 @@ files and images.
          image-dired-temp-rotate-image-file (funcall my/file "temp-rotate-image" image-dired-dir)))
 #+end_src
 
-Copying files with Dired is a blocking process. It’s usually fine when
-there’s not a lot to copy, but it becomes more annoying when moving
-larger files. The package ~dired-rsync~ allows to copy files with ~rsync~
-in the background so we can carry on with our tasks while the copy is
-happening.
+Copying files with Dired is a blocking process. It’s usually fine when there’s not a lot to copy, but it becomes more annoying when moving larger files. The package ~dired-rsync~ allows to copy files with ~rsync~ in the background so we can carry on with our tasks while the copy is happening.
 #+begin_src emacs-lisp
 (use-package dired-rsync
   :if (executable-find "rsync")
@@ -4183,6 +4143,8 @@ From Doom Emacs’ configuration:
 **** Treesitter
 [[https://emacs-tree-sitter.github.io/][Tree sitter]] is a package for emacs based on [[https://tree-sitter.github.io/tree-sitter/][~tree-sitter~]] which provides a very fast and flexible way of performing code-highlighting in Emacs.
 #+begin_src emacs-lisp
+(use-package tsc
+  :straight (:build t))
 (use-package tree-sitter
   :defer t
   :straight (:build t)
@@ -4454,8 +4416,11 @@ And let’s enable some intergration with ~ivy~.
 | cf  | treemacs-create-file                   |             |
 | ci  | treemacs-create-icon                   |             |
 | ct  | treemacs-create-theme                  |             |
-| cw  | treemacs-create-workspace              |             |
 | d   | treemacs-delete-file                   |             |
+| w   |                                        | wordspace   |
+| ws  | treemacs-switch-workspace              |             |
+| wc  | treemacs-create-workspace              |             |
+| wr  | treemacs-remove-workspace              |             |
 | f   |                                        | files       |
 | ff  | treemacs-find-file                     |             |
 | ft  | treemacs-find-tag                      |             |
@@ -5800,7 +5765,6 @@ For LSP to work, we need ~zls~ to be installed.
 paru --skipreview --noconfirm -S zls-bin 2>&1
 #+end_src
 
-
 ** Visual Configuration
 *** Fringe
 It’s nice to know which lines were modified since the last commit in a file.
@@ -6444,6 +6408,7 @@ Undefining some stuff to make keybind prefixes work correctly.
 
   (dqv/evil
     :packages '(counsel)
+    "K"   #'eldoc-doc-buffer
     "U"   #'evil-redo
     "C-a" #'beginning-of-line
     "C-e" #'end-of-line
@@ -6460,6 +6425,7 @@ Undefining some stuff to make keybind prefixes work correctly.
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
   "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
   "oa" '(org-agenda :wk "Agenda")
+  "of" '(browser-file-directory :wk "Open File in Directory")
 
   <<general-keybindings-gen(table=keybinds-apps, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-apps-shell, prefix="as")>>
@@ -6598,6 +6564,7 @@ I also have some keybinds dedicated to opening specific files.
           (interactive)
           (find-file (concat user-emacs-directory "init.el")))
         :which-key "init.el")
+
 "fR"  '((lambda ()
           (interactive)
           (counsel-find-file ""
