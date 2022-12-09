@@ -387,6 +387,10 @@ With a prefix argument, TRASH is nil."
   :config
   (setq which-key-idle-delay 1))
 
+(use-package which-key-posframe
+  :config
+  (which-key-posframe-mode))
+
 (use-package general
   :straight (:build t)
   :init
@@ -2231,8 +2235,7 @@ deactivate `magit-todos-mode', otherwise enable it."
      ("C" "~/Documents/conlanging/content" "Conlanging")))
   (dirvish-mode-line-format
    '(:left (sort file-time "" file-size symlink) :right (omit yank index)))
-   (dirvish-attributes '(all-the-icons file-size  subtree-state  git-msg))
-;; collapse vc-state
+   (dirvish-attributes '(all-the-icons file-size  subtree-state vc-state git-msg))
   :config
   (dirvish-peek-mode)
   (csetq dired-mouse-drag-files                   t
@@ -4503,8 +4506,9 @@ Spell Commands^^           Add To Dictionary^^              Other
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
   "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
-  "oa" '(org-agenda :wk "Agenda")
+  "oa" '(org-agenda :color blue :wk "Agenda")
   "of" '(browser-file-directory :wk "Open File in Directory")
+
 
   "a" '(:ignore t :wk "apps")
   "ac" #'calc
