@@ -2,7 +2,7 @@
 #+AUTHOR: =Dang Quang Vu=
 #+EMAIL: vugomars@gmail.com
 #+SUBTITLE: Emacs configuration for work and life
-#+setupfile: headers
+#+etupfile: headers
 #+html_head: <meta name="description" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:title" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:description" content="Vugomars' Emacs" />
@@ -225,8 +225,8 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; Set Transparency
-(set-frame-parameter (selected-frame) 'alpha '(100 . 100))
-(add-to-list 'default-frame-alist '(alpha . (100 . 100)))
+(set-frame-parameter (selected-frame) 'alpha '(98 . 98))
+(add-to-list 'default-frame-alist '(alpha . (98 . 98)))
 #+end_src
 
 ** Emacs Behavior
@@ -709,7 +709,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
 
  ;; remap C-a to `smarter-move-beginning-of-line'
 
- (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
 #+end_src
 
 ** Go to match paren
@@ -771,6 +770,10 @@ Which key is, I think, one of my favorite quality of life package. When you begi
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 1))
+
+(use-package which-key-posframe
+  :config
+  (which-key-posframe-mode))
 #+end_src
 
 ** General
@@ -1935,38 +1938,40 @@ Another great features of Org-mode is the Org projects that allow the user to ea
 #+end_src
 
 *** Org-present
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Org-present-pw04s240w8j0
-:END:
-~org-present~ allows its user to create presentations through ~org-mode~,
-which is really nice! However, most of my configuration will be stolen
-[[https://config.daviwil.com/emacs#org-present][from Daviwil’s]] with minor changes.
+~org-present~ allows its user to create presentations through ~org-mode~, which is really nice! However, most of my configuration will be stolen [[https://config.daviwil.com/emacs#org-present][from Daviwil’s]] with minor changes.
 #+begin_src emacs-lisp
-(defun my/org-present-prepare-slide ()
+(defun dqv/org-present-prepare-slide ()
   (org-overview)
-  (org-show-entry)
   (org-show-children)
-  (org-present-hide-cursor))
+  (org-show-entry)
+)
 
-(defun my/org-present-init ()
+(defun dqv/org-present-hook ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.5) variable-pitch)
+                                     (org-code (:height 1.55) org-code)
+                                     (org-verbatim (:height 1.55) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.8) org-block)))
   (setq header-line-format " ")
   (org-display-inline-images)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
-(defun my/org-present-quit ()
+(defun dqv/org-present-quit-hook ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
   (setq header-line-format nil)
   (org-present-small)
-  (org-present-show-cursor))
+  (org-remove-inline-images))
 
-(defun my/org-present-prev ()
+(defun dqv/org-present-prev ()
   (interactive)
   (org-present-prev)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
-(defun my/org-present-next ()
+(defun dqv/org-present-next ()
   (interactive)
   (org-present-next)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
 (use-package org-present
   :after org
@@ -1977,7 +1982,7 @@ which is really nice! However, most of my configuration will be stolen
     :packages 'org-present
     :keymaps 'org-mode-map
     "P" #'org-present)
-  (dqv/evil
+   (dqv/evil
     :states 'normal
     :packages 'org-present
     :keymaps 'org-present-mode-keymap
@@ -1994,8 +1999,11 @@ which is really nice! However, most of my configuration will be stolen
     "r" #'org-present-read-only
     "w" #'org-present-read-write
     "q" #'org-present-quit)
-  :hook ((org-present-mode      . my/org-present-init)
-         (org-present-mode-quit . my/org-present-quit)))
+  :bind (:map org-present-mode-keymap
+              ("C-c C-j" . dqv/org-present-next)
+              ("C-c C-k" . dqv/org-present-prev))
+  :hook ((org-present-mode . dqv/org-present-hook)
+         (org-present-mode-quit . dqv/org-present-quit-hook)))
 #+end_src
 
 *** TODOs
@@ -3450,8 +3458,7 @@ I used to have an extensive configuration for Dired with a couple of additional 
      ("C" "~/Documents/conlanging/content" "Conlanging")))
   (dirvish-mode-line-format
    '(:left (sort file-time "" file-size symlink) :right (omit yank index)))
-   (dirvish-attributes '(all-the-icons file-size  subtree-state  git-msg))
-;; collapse vc-state
+   (dirvish-attributes '(all-the-icons file-size  subtree-state vc-state git-msg))
   :config
   (dirvish-peek-mode)
   <<dired-drag-and-drop>>
@@ -6399,8 +6406,6 @@ Winum allows Emacs to associate windows with a specific number and navigate thro
 * Keybindings
 Undefining some stuff to make keybind prefixes work correctly.
 #+begin_src emacs-lisp
-(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
-(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
   (general-define-key
    :keymaps 'global-map
    "<mouse-2>" nil
@@ -6410,22 +6415,27 @@ Undefining some stuff to make keybind prefixes work correctly.
     :packages '(counsel)
     "K"   #'eldoc-doc-buffer
     "U"   #'evil-redo
-    "C-a" #'beginning-of-line
+    "C-a" #'my-smarter-move-beginning-of-line
     "C-e" #'end-of-line
+    "*"   #'dired-create-empty-file
     "C-y" #'yank
+    "C-M-s-p"    #'scroll-half-page-up
+    "C-M-s-n"    #'scroll-half-page-down
     "M-y" #'counsel-yank-pop)
 #+end_src
 
 #+begin_src emacs-lisp
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
-  "."  '(dired-jump :which-key "Dired Jump")
+  "."  '(dirvish :which-key "Dirvish Jump")
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
   "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
-  "oa" '(org-agenda :wk "Agenda")
+  "oa" '(org-agenda :color blue :wk "Agenda")
   "of" '(browser-file-directory :wk "Open File in Directory")
+  "/" '(browse-file-directory :wk "Open Dired Jump new Window")
+
 
   <<general-keybindings-gen(table=keybinds-apps, prefix="a")>>
   <<general-keybindings-gen(table=keybinds-apps-shell, prefix="as")>>

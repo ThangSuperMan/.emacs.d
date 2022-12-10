@@ -340,8 +340,6 @@ APPEND and COMPARE-FN, see `add-to-list'."
 
  ;; remap C-a to `smarter-move-beginning-of-line'
 
- (global-set-key (kbd "C-a") #'my-smarter-move-beginning-of-line)
-
 (defun dqv/goto-match-paren (arg)
   "Go to the matching if on (){}[], similar to vi style of % ."
   (interactive "p")
@@ -1110,31 +1108,38 @@ the value `split-window-right', then it will be changed to
     :packages 'ivy-bibtex
     "m" #'ivy-bibtex))
 
-(defun my/org-present-prepare-slide ()
+(defun dqv/org-present-prepare-slide ()
   (org-overview)
+;;  (org-show-children)
   (org-show-entry)
-  (org-show-children)
-  (org-present-hide-cursor))
+)
 
-(defun my/org-present-init ()
+(defun dqv/org-present-hook ()
+  (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                     (header-line (:height 4.5) variable-pitch)
+                                     (org-code (:height 1.55) org-code)
+                                     (org-verbatim (:height 1.55) org-verbatim)
+                                     (org-block (:height 1.25) org-block)
+                                     (org-block-begin-line (:height 0.8) org-block)))
   (setq header-line-format " ")
   (org-display-inline-images)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
-(defun my/org-present-quit ()
+(defun dqv/org-present-quit-hook ()
+  (setq-local face-remapping-alist '((default variable-pitch default)))
   (setq header-line-format nil)
   (org-present-small)
-  (org-present-show-cursor))
+  (org-remove-inline-images))
 
-(defun my/org-present-prev ()
+(defun dqv/org-present-prev ()
   (interactive)
   (org-present-prev)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
-(defun my/org-present-next ()
+(defun dqv/org-present-next ()
   (interactive)
   (org-present-next)
-  (my/org-present-prepare-slide))
+  (dqv/org-present-prepare-slide))
 
 (use-package org-present
   :after org
@@ -1145,7 +1150,7 @@ the value `split-window-right', then it will be changed to
     :packages 'org-present
     :keymaps 'org-mode-map
     "P" #'org-present)
-  (dqv/evil
+   (dqv/evil
     :states 'normal
     :packages 'org-present
     :keymaps 'org-present-mode-keymap
@@ -1162,8 +1167,11 @@ the value `split-window-right', then it will be changed to
     "r" #'org-present-read-only
     "w" #'org-present-read-write
     "q" #'org-present-quit)
-  :hook ((org-present-mode      . my/org-present-init)
-         (org-present-mode-quit . my/org-present-quit)))
+  :bind (:map org-present-mode-keymap
+              ("C-c C-j" . dqv/org-present-next)
+              ("C-c C-k" . dqv/org-present-prev))
+  :hook ((org-present-mode . dqv/org-present-hook)
+         (org-present-mode-quit . dqv/org-present-quit-hook)))
 
 (setq org-todo-keywords
       '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "STRT(s)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
@@ -4483,8 +4491,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :init (winum-mode))
 
-(define-key evil-normal-state-map (kbd "C-M-s-p") 'scroll-half-page-up)
-(define-key evil-normal-state-map (kbd "C-M-s-n") 'scroll-half-page-down)
   (general-define-key
    :keymaps 'global-map
    "<mouse-2>" nil
@@ -4494,20 +4500,24 @@ Spell Commands^^           Add To Dictionary^^              Other
     :packages '(counsel)
     "K"   #'eldoc-doc-buffer
     "U"   #'evil-redo
-    "C-a" #'beginning-of-line
+    "C-a" #'my-smarter-move-beginning-of-line
     "C-e" #'end-of-line
+    "*"   #'dired-create-empty-file
     "C-y" #'yank
+    "C-M-s-p"    #'scroll-half-page-up
+    "C-M-s-n"    #'scroll-half-page-down
     "M-y" #'counsel-yank-pop)
 
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
-  "."  '(dired-jump :which-key "Dired Jump")
+  "."  '(dirvish :which-key "Dirvish Jump")
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
   "k" '(dqv/switch-to-previous-buffer :wk "Switch to previous buffer")
   "oa" '(org-agenda :color blue :wk "Agenda")
   "of" '(browser-file-directory :wk "Open File in Directory")
+  "/" '(browse-file-directory :wk "Open Dired Jump new Window")
 
 
   "a" '(:ignore t :wk "apps")
