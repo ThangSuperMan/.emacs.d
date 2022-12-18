@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# name: todo journal
+# key: journal
+# --
+* Daily Journal [/]
+** [ ] English
+** [ ] Research
+** [ ] My StartUp
+** [ ] Building Document Training
+
+* Schedule
+** Prepare
+** Powerfull
+** Slow Down
+** Work & Play
+$0

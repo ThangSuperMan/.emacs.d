@@ -640,12 +640,26 @@ With a prefix argument, TRASH is nil."
                                (electric-indent-local-mode -1)))
     (defvar org-training-file "~/Dropbox/Org/Training.org")
     (defvar org-journal-file "~/Dropbox/Org/Journal.org")
+    (defvar org-archive-file "~/Dropbox/Org/Archive.org")
     (defvar org-study-file "~/Dropbox/Org/Study.org")
     (defvar org-social-file "~/Dropbox/Org/Social.org")
     (defvar org-work-file "~/Dropbox/Org/Work.org")
     (defvar org-personal-file "~/Dropbox/Org/Personal.org")
     (setq org-capture-templates
           '(
+            ("a" "Archive")
+            ("aw" "Web" entry
+              (file+headline org-archive-file "Websites")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("ar" "Research" entry
+              (file+headline org-archive-file "Research")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("aq" "Quote" entry
+              (file+headline org-archive-file "Quote")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("ad" "Development" entry
+              (file+headline org-archive-file "Development")
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("j" "Journal" entry
               (file+headline org-journal-file "Journal")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -676,7 +690,8 @@ With a prefix argument, TRASH is nil."
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("p" "Personal" entry
               (file+headline org-personal-file "Personal")
-              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))))
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ))
     (defun org-emphasize-bold ()
       "Emphasize as bold the current region."
       (interactive)
@@ -1110,7 +1125,7 @@ the value `split-window-right', then it will be changed to
 
 (defun dqv/org-present-prepare-slide ()
   (org-overview)
-;;  (org-show-children)
+  (org-show-children)
   (org-show-entry)
 )
 
@@ -1179,13 +1194,13 @@ the value `split-window-right', then it will be changed to
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (setq org-todo-keyword-faces
-      '(("IDEA" . (:foreground "goldenrod" :weight bold))
-        ("NEXT" . (:foreground "IndianRed1" :weight bold))
-        ("STRT" . (:foreground "OrangeRed" :weight bold))
-        ("WAIT" . (:foreground "coral" :weight bold))
-        ("KILL" . (:foreground "DarkGreen" :weight bold))
-        ("PROJ" . (:foreground "LimeGreen" :weight bold))
-        ("HOLD" . (:foreground "orange" :weight bold))))
+      '(("IDEA" . (:foreground "goldenrod" :weight bold :width condensed))
+        ("NEXT" . (:foreground "IndianRed1" :weight bold :width condensed))
+        ("STRT" . (:foreground "OrangeRed" :weight bold :width condensed))
+        ("WAIT" . (:foreground "#6272a4" :weight bold :width condensed))
+        ("KILL" . (:foreground "DarkGreen" :weight bold :width condensed))
+        ("PROJ" . (:foreground "LimeGreen" :weight bold :width condensed))
+        ("HOLD" . (:foreground "orange" :weight bold :width condensed))))
 
 (defun +log-todo-next-creation-date (&rest ignore)
   "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
@@ -2000,6 +2015,7 @@ deactivate `magit-todos-mode', otherwise enable it."
 (use-package evil-nerd-commenter
   :after evil
   :straight (:build t))
+(global-set-key (kbd "C-;") #'evilnc-comment-or-uncomment-lines)
 
 (use-package evil-iedit-state
   :defer t
@@ -3883,17 +3899,20 @@ Spell Commands^^           Add To Dictionary^^              Other
   :defer t
   :straight (:build t)
   :after (rjsx-mode web-mode typescript-mode)
-  :hook ((rjsx-mode typescript-mode) . prettier-js-mode)
+  :hook (rjsx-mode . prettier-js-mode)
+  :hook (typescript-mode . prettier-js-mode)
   :config
-  (csetq prettier-js-args '("--single-quote" "--jsx-single-quote")))
+  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "false")))
 
 (use-package typescript-mode
   :defer t
   :straight (:build t)
   :hook (typescript-mode     . rainbow-delimiters-mode)
   :hook (typescript-mode     . lsp-deferred)
+  :hook (typescript-mode     . prettier-js-mode)
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
+  :hook (typescript-tsx-mode . prettier-js-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init
@@ -4039,15 +4058,15 @@ Spell Commands^^           Add To Dictionary^^              Other
                             "\\\\" "://"))
   (global-ligature-mode t))
 
-(use-package doom-modeline
-  :straight (:build t)
-  :defer t
-  :init (doom-modeline-mode 1)
-  :config
-  (csetq doom-modeline-height 15
-         doom-modeline-enable-word-count t
-         doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode)
-         doom-modeline-env-version t))
+;; (use-package doom-modeline
+;;   :straight (:build t)
+;;   :defer t
+;;   :init (doom-modeline-mode 1)
+;;   :config
+;;   (csetq doom-modeline-height 15
+;;          doom-modeline-enable-word-count t
+;;          doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode)
+;;          doom-modeline-env-version t))
 
 (use-package valign
   :defer t
@@ -4362,6 +4381,40 @@ Spell Commands^^           Add To Dictionary^^              Other
     (modus-themes-load-vivendi))
 (use-package modus-themes :config (my-setup-color-theme))
 
+(use-package doom-themes
+  :straight (:build t)
+  :ensure t
+  :config
+  (load-theme 'doom-dracula t)
+  (doom-themes-neotree-config)
+  (doom-themes-org-config))
+
+(use-package nano-modeline
+  :straight (:build t)
+  :custom
+  (frame-background-mode . 'dark)
+  ;; (nano-color-foreground . "#f8f8f2")
+  ;; (nano-color-background . "#282a36")
+  ;; (nano-color-highlight  . "#373844")
+  ;; (nano-color-critical   . "#bd93f9")
+  ;; (nano-color-salient    . "#0189cc")
+  ;; (nano-color-strong     . "#e2e2dc")
+  ;; (nano-color-popout     . "#f8f8f2")
+  ;; (nano-color-subtle     . "#44475a")
+  ;; (nano-color-faded      . "#6272a4")
+  :custom-face
+  (hl-line                   . '((t (:background "#3B4252" :extend t ))))
+  (vertical-border           . '((t (:background "#282a36" :foreground "#1E2029"))))
+  (mode-line                 . '((t (:background "#282a36"))))
+  (mode-line-inactive        . '((t (:background "#282a36"))))
+  (nano-face-header-salient  . '((t (:foreground "#282a36" :background "#0189cc"))))
+  (nano-face-header-popout   . '((t (:foreground "#282a36" :background "#f1fa8c"))))
+  (nano-face-header-critical . '((t (:foreground "#282a36" :background "#bd93f9"))))
+  (nano-face-header-faded    . '((t (:foreground "#282a36" :background "#6272a4"))))
+  (nano-face-subtle          . '((t (:foreground "#282a36" :background "#44475a"))))
+  (nano-face-header-default  . '((t (:foreground "#b0b8d1" :background "#44475a"))))
+  (nano-face-header-strong   . '((t (:foreground "#f8f8f2" :background "#44475a" :weight bold)))))
+
 (use-package rainbow-delimiters
   :straight (:build t)
   :defer t
@@ -4510,7 +4563,7 @@ Spell Commands^^           Add To Dictionary^^              Other
 
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
-  "."  '(dirvish :which-key "Dirvish Jump")
+  "."  '(dired-jump :which-key "Dired Jump")
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")

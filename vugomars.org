@@ -225,8 +225,8 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; Set Transparency
-(set-frame-parameter (selected-frame) 'alpha '(98 . 98))
-(add-to-list 'default-frame-alist '(alpha . (98 . 98)))
+(set-frame-parameter (selected-frame) 'alpha '(99 . 99))
+(add-to-list 'default-frame-alist '(alpha . (99 . 99)))
 #+end_src
 
 ** Emacs Behavior
@@ -1281,6 +1281,7 @@ Org capture is an amazing tool for taking quick notes, be it simple text, links,
 #+begin_src emacs-lisp :tangle no
 (defvar org-training-file "~/Dropbox/Org/Training.org")
 (defvar org-journal-file "~/Dropbox/Org/Journal.org")
+(defvar org-archive-file "~/Dropbox/Org/Archive.org")
 (defvar org-study-file "~/Dropbox/Org/Study.org")
 (defvar org-social-file "~/Dropbox/Org/Social.org")
 (defvar org-work-file "~/Dropbox/Org/Work.org")
@@ -1299,21 +1300,24 @@ Let me describe a keybind to invoke org-capture from anywhere within Emacs.
 
 When ~org-capture~ is invoked, it will ask which template we wish to use. In the table [[org-capture-shortcuts-table]], the /key/ column represents which keychord we need to hit, titled with /name/, we need to hit in order to use the /template/, inserted in the designated /file/ in the manner described by /insertion mode/.
 #+name: org-capture-shortcuts-table
-| Shortcut | Name     | Title    | Insertion mode | file              | template            |
-|----------+----------+----------+----------------+-------------------+---------------------|
-| j        | Journal  |          | file+headline  | org-journal-file  | schedule.orgcaptmpl |
-| t        | Training |          | file+headline  | org-training-file | schedule.orgcaptmpl |
-| s        | Study    |          | file+headline  | org-study-file    | schedule.orgcaptmpl |
-| S        | Social   |          |                |                   |                     |
-| Sy       | Youtube  | Youtube  | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| St       | Tiktok   | Tiktok   | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| ST       | Tweeter  | Tweeter  | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| Sl       | Linkedin | Linkedin | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| Sb       | Blog     | Posts    | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| w        | Work     |          | file+headline  | org-work-file     | schedule.orgcaptmpl |
-| p        | Personal |          | file+headline  | org-personal-file | schedule.orgcaptmpl |
-
-All templates can be found [[https://labs.phundrak.com/phundrak/dotfiles/src/branch/master/org/capture][in my dotfiles’ repository]].
+| Shortcut | Name        | Title       | Insertion mode | file              | template            |
+|----------+-------------+-------------+----------------+-------------------+---------------------|
+| a        | Archive     |             |                |                   |                     |
+| aw       | Web         | Websites    | file+headline  | org-archive-file  | schedule.orgcaptmpl |
+| ar       | Research    | Research    | file+headline  | org-archive-file  | schedule.orgcaptmpl |
+| aq       | Quote       | Quote       | file+headline  | org-archive-file  | schedule.orgcaptmpl |
+| ad       | Development | Development | file+headline  | org-archive-file  | schedule.orgcaptmpl |
+| j        | Journal     |             | file+headline  | org-journal-file  | schedule.orgcaptmpl |
+| t        | Training    |             | file+headline  | org-training-file | schedule.orgcaptmpl |
+| s        | Study       |             | file+headline  | org-study-file    | schedule.orgcaptmpl |
+| S        | Social      |             |                |                   |                     |
+| Sy       | Youtube     | Youtube     | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| St       | Tiktok      | Tiktok      | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| ST       | Tweeter     | Tweeter     | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| Sl       | Linkedin    | Linkedin    | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| Sb       | Blog        | Posts       | file+headline  | org-social-file   | schedule.orgcaptmpl |
+| w        | Work        |             | file+headline  | org-work-file     | schedule.orgcaptmpl |
+| p        | Personal    |             | file+headline  | org-personal-file | schedule.orgcaptmpl |
 
 #+name: org-capture-shortcuts-gen
 #+header: :exports none :cache yes :tangle no
@@ -1339,8 +1343,21 @@ All templates can be found [[https://labs.phundrak.com/phundrak/dotfiles/src/bra
            "\n")
 #+end_src
 
-#+RESULTS[831b37dd44943debeed5ba7e5830adb20cfc3d05]: org-capture-shortcuts-gen
+#+RESULTS[31faa02754e521f10ffda92a788cec76754bdf07]: org-capture-shortcuts-gen
 #+begin_example
+("a" "Archive")
+("aw" "Web" entry
+  (file+headline org-archive-file "Websites")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("ar" "Research" entry
+  (file+headline org-archive-file "Research")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("aq" "Quote" entry
+  (file+headline org-archive-file "Quote")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("ad" "Development" entry
+  (file+headline org-archive-file "Development")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
 ("j" "Journal" entry
   (file+headline org-journal-file "Journal")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -1356,6 +1373,12 @@ All templates can be found [[https://labs.phundrak.com/phundrak/dotfiles/src/bra
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
 ("St" "Tiktok" entry
   (file+headline org-social-file "Tiktok")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("ST" "Tweeter" entry
+  (file+headline org-social-file "Tweeter")
+  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("Sl" "Linkedin" entry
+  (file+headline org-social-file "Linkedin")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
 ("Sb" "Blog" entry
   (file+headline org-social-file "Posts")
@@ -2014,13 +2037,13 @@ Another great features of Org-mode is the Org projects that allow the user to ea
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (setq org-todo-keyword-faces
-      '(("IDEA" . (:foreground "goldenrod" :weight bold))
-        ("NEXT" . (:foreground "IndianRed1" :weight bold))
-        ("STRT" . (:foreground "OrangeRed" :weight bold))
-        ("WAIT" . (:foreground "coral" :weight bold))
-        ("KILL" . (:foreground "DarkGreen" :weight bold))
-        ("PROJ" . (:foreground "LimeGreen" :weight bold))
-        ("HOLD" . (:foreground "orange" :weight bold))))
+      '(("IDEA" . (:foreground "goldenrod" :weight bold :width condensed))
+        ("NEXT" . (:foreground "IndianRed1" :weight bold :width condensed))
+        ("STRT" . (:foreground "OrangeRed" :weight bold :width condensed))
+        ("WAIT" . (:foreground "#6272a4" :weight bold :width condensed))
+        ("KILL" . (:foreground "DarkGreen" :weight bold :width condensed))
+        ("PROJ" . (:foreground "LimeGreen" :weight bold :width condensed))
+        ("HOLD" . (:foreground "orange" :weight bold :width condensed))))
 
 (defun +log-todo-next-creation-date (&rest ignore)
   "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
@@ -3173,6 +3196,7 @@ Emacs’ default commenting system is nice, but I don’t find it smart enough f
 (use-package evil-nerd-commenter
   :after evil
   :straight (:build t))
+(global-set-key (kbd "C-;") #'evilnc-comment-or-uncomment-lines)
 #+end_src
 
 *** Iedit
@@ -5671,9 +5695,10 @@ And finally, here is a formatter for Javascript.
   :defer t
   :straight (:build t)
   :after (rjsx-mode web-mode typescript-mode)
-  :hook ((rjsx-mode typescript-mode) . prettier-js-mode)
+  :hook (rjsx-mode . prettier-js-mode)
+  :hook (typescript-mode . prettier-js-mode)
   :config
-  (csetq prettier-js-args '("--single-quote" "--jsx-single-quote")))
+  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "false")))
 #+end_src
 
 ***** Typescript
@@ -5684,8 +5709,10 @@ Typescript is a safer alternative to Javascript. Let’s install its major mode 
   :straight (:build t)
   :hook (typescript-mode     . rainbow-delimiters-mode)
   :hook (typescript-mode     . lsp-deferred)
+  :hook (typescript-mode     . prettier-js-mode)
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
+  :hook (typescript-tsx-mode . prettier-js-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init
@@ -5875,15 +5902,15 @@ The font I’m using  supports ligatures, but Emacs in GUI mode does not. And of
 *** Modeline
 The DoomEmacs modeline looks nice in my opinion, let’s use it.
 #+begin_src emacs-lisp
-(use-package doom-modeline
-  :straight (:build t)
-  :defer t
-  :init (doom-modeline-mode 1)
-  :config
-  (csetq doom-modeline-height 15
-         doom-modeline-enable-word-count t
-         doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode)
-         doom-modeline-env-version t))
+;; (use-package doom-modeline
+;;   :straight (:build t)
+;;   :defer t
+;;   :init (doom-modeline-mode 1)
+;;   :config
+;;   (csetq doom-modeline-height 15
+;;          doom-modeline-enable-word-count t
+;;          doom-modeline-continuous-word-count-modes '(markdown-mode gfm-mode org-mode)
+;;          doom-modeline-env-version t))
 #+end_src
 
 *** Pixel-perfect alignment of Markdown and org-mode tables
@@ -5919,15 +5946,6 @@ Solaire-mode applies a subtle but useful tweak to your current color scheme: the
   :defer t
   :straight (:build t)
   :init (solaire-global-mode +1))
-#+end_src
-
-*** Theme
-You may have noticed I use the Nord theme pretty much everywhere on my computer, why not Emacs? In my opinion, its aurora variant is nicer than the default Nord theme since it is richer in colors --- just a personal preference.
-#+begin_src emacs-lisp :tangle no
-(use-package doom-themes
-  :straight (:build t)
-  :defer t
-  :init (load-theme 'doom-nord-aurora t))
 #+end_src
 
 *** Custom Modus
@@ -6233,6 +6251,46 @@ You may have noticed I use the Nord theme pretty much everywhere on my computer,
 (use-package modus-themes :config (my-setup-color-theme))
 #+end_src
 
+**** Doom Themes
+You may have noticed I use the Nord theme pretty much everywhere on my computer, why not Emacs? In my opinion, its aurora variant is nicer than the default Nord theme since it is richer in colors --- just a personal preference.
+#+begin_src emacs-lisp
+(use-package doom-themes
+  :straight (:build t)
+  :ensure t
+  :config
+  (load-theme 'doom-dracula t)
+  (doom-themes-neotree-config)
+  (doom-themes-org-config))
+#+end_src
+
+**** Nano Modeline
+#+begin_src emacs-lisp
+(use-package nano-modeline
+  :straight (:build t)
+  :custom
+  (frame-background-mode . 'dark)
+  ;; (nano-color-foreground . "#f8f8f2")
+  ;; (nano-color-background . "#282a36")
+  ;; (nano-color-highlight  . "#373844")
+  ;; (nano-color-critical   . "#bd93f9")
+  ;; (nano-color-salient    . "#0189cc")
+  ;; (nano-color-strong     . "#e2e2dc")
+  ;; (nano-color-popout     . "#f8f8f2")
+  ;; (nano-color-subtle     . "#44475a")
+  ;; (nano-color-faded      . "#6272a4")
+  :custom-face
+  (hl-line                   . '((t (:background "#3B4252" :extend t ))))
+  (vertical-border           . '((t (:background "#282a36" :foreground "#1E2029"))))
+  (mode-line                 . '((t (:background "#282a36"))))
+  (mode-line-inactive        . '((t (:background "#282a36"))))
+  (nano-face-header-salient  . '((t (:foreground "#282a36" :background "#0189cc"))))
+  (nano-face-header-popout   . '((t (:foreground "#282a36" :background "#f1fa8c"))))
+  (nano-face-header-critical . '((t (:foreground "#282a36" :background "#bd93f9"))))
+  (nano-face-header-faded    . '((t (:foreground "#282a36" :background "#6272a4"))))
+  (nano-face-subtle          . '((t (:foreground "#282a36" :background "#44475a"))))
+  (nano-face-header-default  . '((t (:foreground "#b0b8d1" :background "#44475a"))))
+  (nano-face-header-strong   . '((t (:foreground "#f8f8f2" :background "#44475a" :weight bold)))))
+#+end_src
 *** Rainbow Delimiters
 This makes Lisp especially more readable, but it’s also nice to have for any language that has delimiters like brackets too.
 #+begin_src emacs-lisp
@@ -6427,7 +6485,7 @@ Undefining some stuff to make keybind prefixes work correctly.
 #+begin_src emacs-lisp
 (dqv/leader-key
   "SPC" '(counsel-M-x :wk "M-x")
-  "."  '(dirvish :which-key "Dirvish Jump")
+  "."  '(dired-jump :which-key "Dired Jump")
   "'"   #'shell-pop
   ","   #'magit-status
   "j" '(bufler-switch-buffer :which-key "Switch Buffer")
@@ -6758,6 +6816,3 @@ A couple of keybinds are use for application leetcode, They are prefixed with ~a
 | lO  | leetcode-show-problem-by-slub    |             |
 | lS  | leetcode-submit                  |             |
 | ls  | leetcode-show-problem            |             |
-
-* TODOs
-** TODO Buy PEGBOARD Gỗ
