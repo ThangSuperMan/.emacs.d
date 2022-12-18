@@ -2125,6 +2125,10 @@ deactivate `magit-todos-mode', otherwise enable it."
       "https://www.macmillandictionary.com/dictionary/british/%s"
       :keybinding "t")
 
+    (defengine translate
+      "https://translate.google.com/?hl=vi&sl=en&tl=vi&text=%s&op=translate"
+      :keybinding "T")
+
     (defengine youtube
       "http://www.youtube.com/results?aq=f&oq=&search_query=%s"
       :keybinding "y")
