@@ -1,16 +1,14 @@
 # -*- mode: snippet -*-
-# name: todo journal
-# key: journal
+# name: todolist today
+# key: todo
 # --
-* Daily Journal [/]
-** [ ] English
-** [ ] Research
-** [ ] My StartUp
-** [ ] Building Document Training
 
-* Schedule
-** Prepare
-** Powerfull
-** Slow Down
-** Work & Play
-$0
+* TODO Research
+* TODO Education
+* TODO Community
+
+* MUST Work $0
+
+* SHOULD Learn English
+
+* COULD Read

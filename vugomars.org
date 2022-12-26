@@ -225,8 +225,8 @@ The early init file is the file loaded before anything else in Emacs. This is wh
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; Set Transparency
-(set-frame-parameter (selected-frame) 'alpha '(99 . 99))
-(add-to-list 'default-frame-alist '(alpha . (99 . 99)))
+(set-frame-parameter (selected-frame) 'alpha '(100 . 100))
+(add-to-list 'default-frame-alist '(alpha . (100 . 100)))
 #+end_src
 
 ** Emacs Behavior
@@ -1167,7 +1167,7 @@ Since very recently, the ~contrib/lisp/~ directory of org moved out of the main 
 *** Agenda
 #+name: org-agenda-files
 #+begin_src emacs-lisp :tangle no :exports code :results silent
-(setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/" "~/Dropbox/Roam/daily/"))
+(setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/daily/"))
 #+end_src
 
 *** Babel
@@ -2032,18 +2032,18 @@ Another great features of Org-mode is the Org projects that allow the user to ea
 *** TODOs
 #+begin_src emacs-lisp
 (setq org-todo-keywords
-      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "STRT(s)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "MUST(m)" "SHOULD(s)" "COULD(c)" "|" "DONE(d)" "KILL(k)")
         (sequence "[ ](T)" "[-](S)" "|" "[X](D)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (setq org-todo-keyword-faces
       '(("IDEA" . (:foreground "goldenrod" :weight bold :width condensed))
         ("NEXT" . (:foreground "IndianRed1" :weight bold :width condensed))
-        ("STRT" . (:foreground "OrangeRed" :weight bold :width condensed))
-        ("WAIT" . (:foreground "#6272a4" :weight bold :width condensed))
+        ("MUST" . (:foreground "OrangeRed" :weight bold :width condensed))
+        ("SHOULD" . (:foreground "#6272a4" :weight bold :width condensed))
         ("KILL" . (:foreground "DarkGreen" :weight bold :width condensed))
         ("PROJ" . (:foreground "LimeGreen" :weight bold :width condensed))
-        ("HOLD" . (:foreground "orange" :weight bold :width condensed))))
+        ("COULD" . (:foreground "orange" :weight bold :width condensed))))
 
 (defun +log-todo-next-creation-date (&rest ignore)
   "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
@@ -2095,15 +2095,7 @@ Another great features of Org-mode is the Org projects that allow the user to ea
 #+end_src
 
 *** Visual Configuration
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Org-mode-Visual-Configurationrol5fl6184j0
-:END:
-While most modes of Emacs are dedicated to development, and therefore
-are much more comfortable with a fixed-pitch font, more literary modes
-such as org-mode are much more enjoyable if you have a variable pitch
-font enabled. *BUT*, these modes can also require some fixed-pitch fonts
-for some elements of the buffer, such as code blocks with
-org-mode. ~mixed-pitch~ comes to the rescue!
+While most modes of Emacs are dedicated to development, and therefore are much more comfortable with a fixed-pitch font, more literary modes such as org-mode are much more enjoyable if you have a variable pitch font enabled. *BUT*, these modes can also require some fixed-pitch fonts for some elements of the buffer, such as code blocks with org-mode. ~mixed-pitch~ comes to the rescue!
 #+begin_src emacs-lisp
 (use-package mixed-pitch
   :after org
@@ -2116,13 +2108,7 @@ org-mode. ~mixed-pitch~ comes to the rescue!
   (add-hook 'org-agenda-mode-hook (lambda () (mixed-pitch-mode -1))))
 #+end_src
 
-I have an issue with org-mode’s emphasis markers: I find them ugly. I
-can of course hide them if I simply set ~org-hide-emphasis-markers~ to
-~t~, but it makes editing hard since I never know whether I am before or
-after the emphasis marker when editing near the beginning/end of an
-emphasized region. ~org-appear~ fixes this issue so that it shows the
-emphasis markers only when the cursor is in the emphasized region,
-otherwise they will remain hidden! Very cool!
+I have an issue with org-mode’s emphasis markers: I find them ugly. I can of course hide them if I simply set ~org-hide-emphasis-markers~ to ~t~, but it makes editing hard since I never know whether I am before or after the emphasis marker when editing near the beginning/end of an emphasized region. ~org-appear~ fixes this issue so that it shows the emphasis markers only when the cursor is in the emphasized region, otherwise they will remain hidden! Very cool!
 #+begin_src emacs-lisp
 (use-package org-appear
   :after org
@@ -2137,9 +2123,7 @@ otherwise they will remain hidden! Very cool!
   (run-at-time nil nil #'org-appear--set-elements))
 #+end_src
 
-Similarly, LaTeX fragments previews are nice and all, but if I have my
-cursor on it, I want to see the LaTeX source code and modify it, not
-just the generated image!
+Similarly, LaTeX fragments previews are nice and all, but if I have my cursor on it, I want to see the LaTeX source code and modify it, not just the generated image!
 #+begin_src emacs-lisp
 (use-package org-fragtog
   :defer t
@@ -2148,9 +2132,7 @@ just the generated image!
   :hook (org-mode . org-fragtog-mode))
 #+end_src
 
-Org-modern modernizes a bit the appearance of org buffers, including
-tables, source blocks, and tags,, and it applies settings similar to
-~org-superstar~ which I used to use.
+Org-modern modernizes a bit the appearance of org buffers, including tables, source blocks, and tags,, and it applies settings similar to ~org-superstar~ which I used to use.
 #+begin_src emacs-lisp
 (use-package org-modern
   :straight (:build t)
@@ -2160,8 +2142,7 @@ tables, source blocks, and tags,, and it applies settings similar to
   :hook (org-agenda-finalize . org-modern-agenda))
 #+end_src
 
-~org-fancy-priorities~ change the priority of an org element such as ~#A~
-to anything user-defined. Let’s all-the-iconify this!
+~org-fancy-priorities~ change the priority of an org element such as ~#A~ to anything user-defined. Let’s all-the-iconify this!
 #+begin_src emacs-lisp
 (use-package org-fancy-priorities
   :after (org all-the-icons)
@@ -3325,7 +3306,7 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
       :keybinding "l")
 
     (defengine translate
-      "https://www.macmillandictionary.com/dictionary/british/%s"
+      "https://dictionary.cambridge.org/dictionary/english/%s"
       :keybinding "t")
 
     (defengine translate
@@ -4384,6 +4365,7 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
+         (move-mode     . lsp-deferred)
          (json-mode     . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
@@ -4977,6 +4959,28 @@ When editing some scripts though, I need to use the built-in ~shell-mode~.
 #+begin_src emacs-lisp
 (use-package move-mode
   :straight (:build t :host github :repo "amnn/move-mode" :branch "main"))
+
+(add-hook 'move-mode-hook #'eglot-ensure)
+;;(add-to-list 'eglot-server-programs '(move-mode "move-analyzer"))
+
+(defun my/move-lsp-project-root (dir)
+  (and-let* (((boundp 'eglot-lsp-context))
+             (eglot-lsp-context)
+             (override (locate-dominating-file dir "Move.toml")))
+    (cons 'Move.toml override)))
+
+(add-hook 'project-find-functions #'my/move-lsp-project-root)
+(cl-defmethod project-root ((project (head Move.toml)))
+  (cdr project))
+
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(move-mode . "move"))
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection "move-analyzer")
+    :activation-fn (lsp-activate-on "move")
+    :priority -1
+    :server-id 'move-analyzer)))
 #+end_src
 
 *** General Programming Languages
@@ -6649,6 +6653,11 @@ I also have some keybinds dedicated to opening specific files.
           (interactive)
           (browse-url "https://github.com/vugomars"))
         :wk "My Github")
+
+"owr"  '((lambda ()
+          (interactive)
+          (browse-url "https://reddit.com/"))
+        :wk "Reddit")
 
 "owc"  '((lambda ()
           (interactive)

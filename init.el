@@ -634,7 +634,7 @@ With a prefix argument, TRASH is nil."
           org-default-notes-file             (expand-file-name "notes.org" org-directory))
     (with-eval-after-load 'oc
      (setq org-cite-global-bibliography '("~/Dropbox/Org/bibliography/references.bib")))
-    (setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/" "~/Dropbox/Roam/daily/"))
+    (setq org-agenda-files (list "~/Dropbox/Org/" "~/Dropbox/Roam/daily/"))
     (add-hook 'org-mode-hook (lambda ()
                                (interactive)
                                (electric-indent-local-mode -1)))
@@ -1189,18 +1189,18 @@ the value `split-window-right', then it will be changed to
          (org-present-mode-quit . dqv/org-present-quit-hook)))
 
 (setq org-todo-keywords
-      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "STRT(s)" "WAIT(w)" "HOLD(h)" "|" "DONE(d)" "KILL(k)")
+      '((sequence "IDEA(i)" "TODO(t)" "NEXT(n)" "PROJ(p)" "MUST(m)" "SHOULD(s)" "COULD(c)" "|" "DONE(d)" "KILL(k)")
         (sequence "[ ](T)" "[-](S)" "|" "[X](D)")
         (sequence "|" "OKAY(o)" "YES(y)" "NO(n)")))
 
 (setq org-todo-keyword-faces
       '(("IDEA" . (:foreground "goldenrod" :weight bold :width condensed))
         ("NEXT" . (:foreground "IndianRed1" :weight bold :width condensed))
-        ("STRT" . (:foreground "OrangeRed" :weight bold :width condensed))
-        ("WAIT" . (:foreground "#6272a4" :weight bold :width condensed))
+        ("MUST" . (:foreground "OrangeRed" :weight bold :width condensed))
+        ("SHOULD" . (:foreground "#6272a4" :weight bold :width condensed))
         ("KILL" . (:foreground "DarkGreen" :weight bold :width condensed))
         ("PROJ" . (:foreground "LimeGreen" :weight bold :width condensed))
-        ("HOLD" . (:foreground "orange" :weight bold :width condensed))))
+        ("COULD" . (:foreground "orange" :weight bold :width condensed))))
 
 (defun +log-todo-next-creation-date (&rest ignore)
   "Log NEXT creation time in the property drawer under the key 'ACTIVATED'"
@@ -2122,7 +2122,7 @@ deactivate `magit-todos-mode', otherwise enable it."
       :keybinding "l")
 
     (defengine translate
-      "https://www.macmillandictionary.com/dictionary/british/%s"
+      "https://dictionary.cambridge.org/dictionary/english/%s"
       :keybinding "t")
 
     (defengine translate
@@ -2924,6 +2924,7 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
+         (move-mode     . lsp-deferred)
          (json-mode     . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
@@ -3340,6 +3341,28 @@ Spell Commands^^           Add To Dictionary^^              Other
 
 (use-package move-mode
   :straight (:build t :host github :repo "amnn/move-mode" :branch "main"))
+
+(add-hook 'move-mode-hook #'eglot-ensure)
+;;(add-to-list 'eglot-server-programs '(move-mode "move-analyzer"))
+
+(defun my/move-lsp-project-root (dir)
+  (and-let* (((boundp 'eglot-lsp-context))
+             (eglot-lsp-context)
+             (override (locate-dominating-file dir "Move.toml")))
+    (cons 'Move.toml override)))
+
+(add-hook 'project-find-functions #'my/move-lsp-project-root)
+(cl-defmethod project-root ((project (head Move.toml)))
+  (cdr project))
+
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(move-mode . "move"))
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection "move-analyzer")
+    :activation-fn (lsp-activate-on "move")
+    :priority -1
+    :server-id 'move-analyzer)))
 
 (use-package cc-mode
   :straight (:type built-in)
@@ -4693,6 +4716,11 @@ Spell Commands^^           Add To Dictionary^^              Other
             (interactive)
             (browse-url "https://github.com/vugomars"))
           :wk "My Github")
+  
+  "owr"  '((lambda ()
+            (interactive)
+            (browse-url "https://reddit.com/"))
+          :wk "Reddit")
   
   "owc"  '((lambda ()
             (interactive)
