@@ -1915,7 +1915,7 @@ deactivate `magit-todos-mode', otherwise enable it."
   :defer t
   :straight (:build t)
   :custom
-  (shell-pop-default-directory "/home/phundrak")
+  (shell-pop-default-directory "/home/vudangquang")
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda () (eshell shell-pop-term-shell)))))
   (shell-pop-window-size 30)
   (shell-pop-full-span nil)
@@ -2015,7 +2015,7 @@ deactivate `magit-todos-mode', otherwise enable it."
 (use-package evil-nerd-commenter
   :after evil
   :straight (:build t))
-(global-set-key (kbd "C-;") #'evilnc-comment-or-uncomment-lines)
+(global-set-key (kbd "s-/") #'evilnc-comment-or-uncomment-lines)
 
 (use-package evil-iedit-state
   :defer t
@@ -2121,7 +2121,7 @@ deactivate `magit-todos-mode', otherwise enable it."
       "http://localhost:%s"
       :keybinding "l")
 
-    (defengine translate
+    (defengine cambridge
       "https://dictionary.cambridge.org/dictionary/english/%s"
       :keybinding "t")
 
@@ -3810,6 +3810,7 @@ Spell Commands^^           Add To Dictionary^^              Other
    "h"  '(:ignore t :which-key "dom")
    "hp" #'web-mode-dom-xpath
    "r"  '(:ignore t :which-key "refactor")
+   "j"  '(web-mode-tag-match :which-key "Jump Match")
    "rc" #'web-mode-element-clone
    "rd" #'web-mode-element-vanish
    "rk" #'web-mode-element-kill
@@ -3886,10 +3887,12 @@ Spell Commands^^           Add To Dictionary^^              Other
   :general
   (dqv/major-leader-key
     :keymaps 'rjsx-mode-map
-    :infix "a"
-    ""  '(:keymap lsp-command-map :which-key "lsp")
-    "=" '(:ignore t :wk "format")
-    "a" '(:ignore t :which-key "actions"))
+    "rr" #'rjsx-rename-tag-at-point
+    "rj" #'rjsx-jump-tag)
+  (dqv/evil
+    :keymaps 'rjsx-mode-map
+    "s-;" #'rjsx-jump-tag
+    "s-r" #'rjsx-rename-tag-at-point)
   :config
   (setq js-chain-indent                  t
         js2-basic-offset                 2
@@ -3940,6 +3943,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
   :hook (typescript-tsx-mode . prettier-js-mode)
+  :hook (typescript-tsx-mode     . rjsx-minor-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init

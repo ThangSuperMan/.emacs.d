@@ -2580,12 +2580,7 @@ Finally, let’s make ~ivy~ richer:
 #+end_src
 
 *** Counsel
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletion-Counselorr1fl6184j0
-:END:
-I could almost merge this chapter with the previous one since counsel
-is a package that provides loads of completion functions for ivy. The
-ones I find most useful are ~counsel-M-x~ and ~counsel-find-file~.
+I could almost merge this chapter with the previous one since counsel is a package that provides loads of completion functions for ivy. The ones I find most useful are ~counsel-M-x~ and ~counsel-find-file~.
 #+begin_src emacs-lisp
 (use-package counsel
   :straight (:build t)
@@ -2599,12 +2594,7 @@ ones I find most useful are ~counsel-M-x~ and ~counsel-find-file~.
 #+end_src
 
 *** Yasnippet
-:PROPERTIES:
-:CUSTOM_ID: Packages-Configuration-Autocompletion-Yasnippet68t1fl6184j0
-:END:
-Yasnippet allows you to insert some pre-made code by just typing a few
-characters. It can even generate some string with Elisp expressions
-and ask the user for some input in some precise places.
+Yasnippet allows you to insert some pre-made code by just typing a few characters. It can even generate some string with Elisp expressions and ask the user for some input in some precise places.
 #+begin_src emacs-lisp
 (use-package yasnippet
   :defer t
@@ -3025,7 +3015,7 @@ buffer.
   :defer t
   :straight (:build t)
   :custom
-  (shell-pop-default-directory "/home/phundrak")
+  (shell-pop-default-directory "/home/vudangquang")
   (shell-pop-shell-type (quote ("eshell" "*eshell*" (lambda () (eshell shell-pop-term-shell)))))
   (shell-pop-window-size 30)
   (shell-pop-full-span nil)
@@ -3177,7 +3167,7 @@ Emacs’ default commenting system is nice, but I don’t find it smart enough f
 (use-package evil-nerd-commenter
   :after evil
   :straight (:build t))
-(global-set-key (kbd "C-;") #'evilnc-comment-or-uncomment-lines)
+(global-set-key (kbd "s-/") #'evilnc-comment-or-uncomment-lines)
 #+end_src
 
 *** Iedit
@@ -3305,7 +3295,7 @@ Don’t let the name of the package fool you! ~parinfer-rust-mode~ is not a ~par
       "http://localhost:%s"
       :keybinding "l")
 
-    (defengine translate
+    (defengine cambridge
       "https://dictionary.cambridge.org/dictionary/english/%s"
       :keybinding "t")
 
@@ -3683,10 +3673,7 @@ Old habits die hard."
       (find-file f t))))
 #+end_src
 
-Finally, I’ll declare ~mkcd~ which allows the simultaneous creation of a
-directory and moving into this newly created directory. And of course,
-it will also work if the directory also exists or if parent
-directories don’t, similarly to the ~-p~ option passed to ~mkdir~.
+Finally, I’ll declare ~mkcd~ which allows the simultaneous creation of a directory and moving into this newly created directory. And of course, it will also work if the directory also exists or if parent directories don’t, similarly to the ~-p~ option passed to ~mkdir~.
 #+name: eshell-alias-mkcd
 #+begin_src emacs-lisp :tangle no
 (defun eshell/mkcd (dir)
@@ -3701,8 +3688,7 @@ if needed, then move there."
 :PROPERTIES:
 :CUSTOM_ID: Packages-Configuration-Emacs-built-ins-Eshell-Autosuggestion-kf6ipm1195j0
 :END:
-I really like fish’s autosuggestion feature, so let’s reproduce it
-here!
+I really like fish’s autosuggestion feature, so let’s reproduce it here!
 #+begin_src emacs-lisp
 (use-package esh-autosuggest
   :defer t
@@ -5558,6 +5544,7 @@ Web mode is a sort of hybrid major mode that allows editing several languages in
    "h"  '(:ignore t :which-key "dom")
    "hp" #'web-mode-dom-xpath
    "r"  '(:ignore t :which-key "refactor")
+   "j"  '(web-mode-tag-match :which-key "Jump Match")
    "rc" #'web-mode-element-clone
    "rd" #'web-mode-element-vanish
    "rk" #'web-mode-element-kill
@@ -5654,10 +5641,12 @@ For some reason, although it is built-in, ~less-css-mode~ does not activate when
   :general
   (dqv/major-leader-key
     :keymaps 'rjsx-mode-map
-    :infix "a"
-    ""  '(:keymap lsp-command-map :which-key "lsp")
-    "=" '(:ignore t :wk "format")
-    "a" '(:ignore t :which-key "actions"))
+    "rr" #'rjsx-rename-tag-at-point
+    "rj" #'rjsx-jump-tag)
+  (dqv/evil
+    :keymaps 'rjsx-mode-map
+    "s-;" #'rjsx-jump-tag
+    "s-r" #'rjsx-rename-tag-at-point)
   :config
   (setq js-chain-indent                  t
         js2-basic-offset                 2
@@ -5721,6 +5710,7 @@ Typescript is a safer alternative to Javascript. Let’s install its major mode 
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
   :hook (typescript-tsx-mode . prettier-js-mode)
+  :hook (typescript-tsx-mode     . rjsx-minor-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init
