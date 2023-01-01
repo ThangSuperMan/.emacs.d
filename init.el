@@ -642,7 +642,7 @@ With a prefix argument, TRASH is nil."
     (defvar org-journal-file "~/Dropbox/Org/Journal.org")
     (defvar org-archive-file "~/Dropbox/Org/Archive.org")
     (defvar org-study-file "~/Dropbox/Org/Study.org")
-    (defvar org-social-file "~/Dropbox/Org/Social.org")
+    (defvar org-vocabulary-file "~/Dropbox/Org/Vocabulary.org")
     (defvar org-work-file "~/Dropbox/Org/Work.org")
     (defvar org-personal-file "~/Dropbox/Org/Personal.org")
     (setq org-capture-templates
@@ -669,10 +669,9 @@ With a prefix argument, TRASH is nil."
             ("s" "Study" entry
               (file+headline org-study-file "Study")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
-            ("S" "Social")
-            ("Sy" "Youtube" entry
-              (file+headline org-social-file "Youtube")
-              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("v" "Vocabulary" entry
+              (file+headline org-vocabulary-file "Vocabulary")
+              (file "~/.emacs.d/capture/vocabulary.orgcaptmpl"))
             ("St" "Tiktok" entry
               (file+headline org-social-file "Tiktok")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -690,8 +689,7 @@ With a prefix argument, TRASH is nil."
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("p" "Personal" entry
               (file+headline org-personal-file "Personal")
-              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
-            ))
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))))
     (defun org-emphasize-bold ()
       "Emphasize as bold the current region."
       (interactive)
@@ -1458,6 +1456,10 @@ the value `split-window-right', then it will be changed to
 (org-agenda-to-appt)             ;; generate the appt list from org agenda files on emacs launch
 (run-at-time "24:01" 3600 'org-agenda-to-appt)           ;; update appt list hourly
 (add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
+
+(use-package lsp-grammarly)
+(use-package websocket
+  :straight (:build t))
 
 (use-package company
   :straight (:build t)
@@ -2924,8 +2926,9 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
-         (move-mode     . lsp-deferred)
-         (json-mode     . lsp-deferred)
+         (text-mode       . lsp-deferred)
+         (move-mode       . lsp-deferred)
+         (json-mode       . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
@@ -3879,6 +3882,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :interpreter "node"
   :hook (rjsx-mode . rainbow-delimiters-mode)
   :hook (rjsx-mode . lsp-deferred)
+  :hook (rjsx-mode . prettier-js-mode)
   :init
   (add-to-list 'compilation-error-regexp-alist 'node)
   (add-to-list 'compilation-error-regexp-alist-alist
@@ -3930,9 +3934,10 @@ Spell Commands^^           Add To Dictionary^^              Other
   :straight (:build t)
   :after (rjsx-mode web-mode typescript-mode)
   :hook (rjsx-mode . prettier-js-mode)
+  :hook (js-mode . prettier-js-mode)
   :hook (typescript-mode . prettier-js-mode)
   :config
-  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "false")))
+  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "true")))
 
 (use-package typescript-mode
   :defer t
@@ -3943,7 +3948,6 @@ Spell Commands^^           Add To Dictionary^^              Other
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
   :hook (typescript-tsx-mode . prettier-js-mode)
-  :hook (typescript-tsx-mode     . rjsx-minor-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init

@@ -1,4 +1,4 @@
-#+title: Emacs Configuratio
+#+title: My Emacs Configuration
 #+AUTHOR: =Dang Quang Vu=
 #+EMAIL: vugomars@gmail.com
 #+SUBTITLE: Emacs configuration for work and life
@@ -6,7 +6,7 @@
 #+html_head: <meta name="description" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:title" content="Vugomars' Emacs" />
 #+html_head: <meta property="og:description" content="Vugomars' Emacs" />
-#+property: header-args:emacs-lisp  :mkdirp yes :lexical t :exports code
+#+property: header-args:emacs-lisp :mkdirp yes :lexical t :exports code
 #+property: header-args:emacs-lisp+ :tangle ./init.el
 #+property: header-args:emacs-lisp+ :mkdirp yes :noweb no-export
 #+options: title:t author:t email:t toc:t date:t tags:nil
@@ -759,6 +759,7 @@ With a prefix argument, TRASH is nil."
       (browse-url-of-file (expand-file-name default-directory))
     (error "No `default-directory' to open")))
 #+end_src
+
 * Keybinding Management
 ** Which-key
 Which key is, I think, one of my favorite quality of life package. When you begin a keybind, Emacs will show you all keybinds you can follow the first one with in order to form a full keychord. Very useful when you have a lot of keybinds and don’t remember exactly what is what.
@@ -1283,7 +1284,7 @@ Org capture is an amazing tool for taking quick notes, be it simple text, links,
 (defvar org-journal-file "~/Dropbox/Org/Journal.org")
 (defvar org-archive-file "~/Dropbox/Org/Archive.org")
 (defvar org-study-file "~/Dropbox/Org/Study.org")
-(defvar org-social-file "~/Dropbox/Org/Social.org")
+(defvar org-vocabulary-file "~/Dropbox/Org/Vocabulary.org")
 (defvar org-work-file "~/Dropbox/Org/Work.org")
 (defvar org-personal-file "~/Dropbox/Org/Personal.org")
 #+end_src
@@ -1300,24 +1301,23 @@ Let me describe a keybind to invoke org-capture from anywhere within Emacs.
 
 When ~org-capture~ is invoked, it will ask which template we wish to use. In the table [[org-capture-shortcuts-table]], the /key/ column represents which keychord we need to hit, titled with /name/, we need to hit in order to use the /template/, inserted in the designated /file/ in the manner described by /insertion mode/.
 #+name: org-capture-shortcuts-table
-| Shortcut | Name        | Title       | Insertion mode | file              | template            |
-|----------+-------------+-------------+----------------+-------------------+---------------------|
-| a        | Archive     |             |                |                   |                     |
-| aw       | Web         | Websites    | file+headline  | org-archive-file  | schedule.orgcaptmpl |
-| ar       | Research    | Research    | file+headline  | org-archive-file  | schedule.orgcaptmpl |
-| aq       | Quote       | Quote       | file+headline  | org-archive-file  | schedule.orgcaptmpl |
-| ad       | Development | Development | file+headline  | org-archive-file  | schedule.orgcaptmpl |
-| j        | Journal     |             | file+headline  | org-journal-file  | schedule.orgcaptmpl |
-| t        | Training    |             | file+headline  | org-training-file | schedule.orgcaptmpl |
-| s        | Study       |             | file+headline  | org-study-file    | schedule.orgcaptmpl |
-| S        | Social      |             |                |                   |                     |
-| Sy       | Youtube     | Youtube     | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| St       | Tiktok      | Tiktok      | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| ST       | Tweeter     | Tweeter     | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| Sl       | Linkedin    | Linkedin    | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| Sb       | Blog        | Posts       | file+headline  | org-social-file   | schedule.orgcaptmpl |
-| w        | Work        |             | file+headline  | org-work-file     | schedule.orgcaptmpl |
-| p        | Personal    |             | file+headline  | org-personal-file | schedule.orgcaptmpl |
+| Shortcut | Name        | Title       | Insertion mode | file                | template              |
+|----------+-------------+-------------+----------------+---------------------+-----------------------|
+| a        | Archive     |             |                |                     |                       |
+| aw       | Web         | Websites    | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
+| ar       | Research    | Research    | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
+| aq       | Quote       | Quote       | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
+| ad       | Development | Development | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
+| j        | Journal     |             | file+headline  | org-journal-file    | schedule.orgcaptmpl   |
+| t        | Training    |             | file+headline  | org-training-file   | schedule.orgcaptmpl   |
+| s        | Study       |             | file+headline  | org-study-file      | schedule.orgcaptmpl   |
+| v        | Vocabulary  |             | file+headline  | org-vocabulary-file | vocabulary.orgcaptmpl |
+| St       | Tiktok      | Tiktok      | file+headline  | org-social-file     | schedule.orgcaptmpl   |
+| ST       | Tweeter     | Tweeter     | file+headline  | org-social-file     | schedule.orgcaptmpl   |
+| Sl       | Linkedin    | Linkedin    | file+headline  | org-social-file     | schedule.orgcaptmpl   |
+| Sb       | Blog        | Posts       | file+headline  | org-social-file     | schedule.orgcaptmpl   |
+| w        | Work        |             | file+headline  | org-work-file       | schedule.orgcaptmpl   |
+| p        | Personal    |             | file+headline  | org-personal-file   | schedule.orgcaptmpl   |
 
 #+name: org-capture-shortcuts-gen
 #+header: :exports none :cache yes :tangle no
@@ -2053,6 +2053,7 @@ Another great features of Org-mode is the Org projects that allow the user to ea
 
 (add-hook 'org-after-todo-state-change-hook #'+log-todo-next-creation-date)
 #+end_src
+
 *** Tags                                                                  :tag:
 #+begin_src emacs-lisp
 (setq org-tag-persistent-alist
@@ -2291,7 +2292,6 @@ Org-modern modernizes a bit the appearance of org buffers, including tables, sou
 (add-hook 'org-gcal-after-update-entry-functions #'my-org-gcal-set-effort)
 #+end_src
 
-
 *** Roam
 #+begin_src emacs-lisp
 (use-package org-roam
@@ -2356,6 +2356,13 @@ Org-modern modernizes a bit the appearance of org buffers, including tables, sou
 (add-hook 'org-finalize-agenda-hook 'org-agenda-to-appt) ;; update appt list on agenda view
 #+end_src
 
+*** Grammarly
+#+begin_src emacs-lisp
+(use-package lsp-grammarly)
+(use-package websocket
+  :straight (:build t))
+
+#+end_src
 * Packages Configuration
 ** Autocompletion
 *** Code Autocompletion
@@ -4351,8 +4358,9 @@ Spell Commands^^           Add To Dictionary^^              Other
          (html-mode       . lsp-deferred)
          (sh-mode         . lsp-deferred)
          (rustic-mode     . lsp-deferred)
-         (move-mode     . lsp-deferred)
-         (json-mode     . lsp-deferred)
+         (text-mode       . lsp-deferred)
+         (move-mode       . lsp-deferred)
+         (json-mode       . lsp-deferred)
          (typescript-mode . lsp-deferred)
          (lsp-mode        . lsp-enable-which-key-integration)
          (lsp-mode        . lsp-ui-mode))
@@ -5633,6 +5641,7 @@ For some reason, although it is built-in, ~less-css-mode~ does not activate when
   :interpreter "node"
   :hook (rjsx-mode . rainbow-delimiters-mode)
   :hook (rjsx-mode . lsp-deferred)
+  :hook (rjsx-mode . prettier-js-mode)
   :init
   (add-to-list 'compilation-error-regexp-alist 'node)
   (add-to-list 'compilation-error-regexp-alist-alist
@@ -5693,9 +5702,10 @@ And finally, here is a formatter for Javascript.
   :straight (:build t)
   :after (rjsx-mode web-mode typescript-mode)
   :hook (rjsx-mode . prettier-js-mode)
+  :hook (js-mode . prettier-js-mode)
   :hook (typescript-mode . prettier-js-mode)
   :config
-  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "false")))
+  (setq prettier-js-args '("--trailing-comma" "all" "--bracket-spacing" "true")))
 #+end_src
 
 ***** Typescript
@@ -5710,7 +5720,6 @@ Typescript is a safer alternative to Javascript. Let’s install its major mode 
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
   :hook (typescript-tsx-mode . prettier-js-mode)
-  :hook (typescript-tsx-mode     . rjsx-minor-mode)
   :commands typescript-tsx-mode
   :after flycheck
   :init
