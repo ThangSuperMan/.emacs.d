@@ -1308,6 +1308,7 @@ When ~org-capture~ is invoked, it will ask which template we wish to use. In the
 | ar       | Research    | Research    | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
 | aq       | Quote       | Quote       | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
 | ad       | Development | Development | file+headline  | org-archive-file    | schedule.orgcaptmpl   |
+| i        | Ideas       |             | file+headline  | org-archive-file    | ideas.orgcaptmpl      |
 | j        | Journal     |             | file+headline  | org-journal-file    | schedule.orgcaptmpl   |
 | t        | Training    |             | file+headline  | org-training-file   | schedule.orgcaptmpl   |
 | s        | Study       |             | file+headline  | org-study-file      | schedule.orgcaptmpl   |
@@ -1343,7 +1344,7 @@ When ~org-capture~ is invoked, it will ask which template we wish to use. In the
            "\n")
 #+end_src
 
-#+RESULTS[31faa02754e521f10ffda92a788cec76754bdf07]: org-capture-shortcuts-gen
+#+RESULTS[7643b4af0bad2d5e1349d3722e8c5348fe77bb81]: org-capture-shortcuts-gen
 #+begin_example
 ("a" "Archive")
 ("aw" "Web" entry
@@ -1358,6 +1359,9 @@ When ~org-capture~ is invoked, it will ask which template we wish to use. In the
 ("ad" "Development" entry
   (file+headline org-archive-file "Development")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("i" "Ideas" entry
+  (file+headline org-archive-file "Ideas")
+  (file "~/.emacs.d/capture/ideas.orgcaptmpl"))
 ("j" "Journal" entry
   (file+headline org-journal-file "Journal")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -1367,10 +1371,9 @@ When ~org-capture~ is invoked, it will ask which template we wish to use. In the
 ("s" "Study" entry
   (file+headline org-study-file "Study")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
-("S" "Social")
-("Sy" "Youtube" entry
-  (file+headline org-social-file "Youtube")
-  (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+("v" "Vocabulary" entry
+  (file+headline org-vocabulary-file "Vocabulary")
+  (file "~/.emacs.d/capture/vocabulary.orgcaptmpl"))
 ("St" "Tiktok" entry
   (file+headline org-social-file "Tiktok")
   (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -2362,6 +2365,10 @@ Org-modern modernizes a bit the appearance of org buffers, including tables, sou
 (use-package websocket
   :straight (:build t))
 
+#+end_src
+*** Jira
+#+begin_src emacs-lisp
+(setq jiralib-url "https://vugomars.atlassian.net")
 #+end_src
 * Packages Configuration
 ** Autocompletion
@@ -4496,9 +4503,11 @@ And let’s enable some intergration with ~ivy~.
   (dap-ui-controls-mode 1)
 
   (require 'dap-lldb)
+  (require 'dap-node)
   (require 'dap-gdb-lldb)
 
   (dap-gdb-lldb-setup)
+  (dap-node-setup)
   (dap-register-debug-template
    "Rust::LLDB Run Configuration"
    (list :type "lldb"

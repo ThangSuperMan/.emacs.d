@@ -660,6 +660,9 @@ With a prefix argument, TRASH is nil."
             ("ad" "Development" entry
               (file+headline org-archive-file "Development")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ("i" "Ideas" entry
+              (file+headline org-archive-file "Ideas")
+              (file "~/.emacs.d/capture/ideas.orgcaptmpl"))
             ("j" "Journal" entry
               (file+headline org-journal-file "Journal")
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
@@ -689,7 +692,8 @@ With a prefix argument, TRASH is nil."
               (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
             ("p" "Personal" entry
               (file+headline org-personal-file "Personal")
-              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))))
+              (file "~/.emacs.d/capture/schedule.orgcaptmpl"))
+            ))
     (defun org-emphasize-bold ()
       "Emphasize as bold the current region."
       (interactive)
@@ -1460,6 +1464,8 @@ the value `split-window-right', then it will be changed to
 (use-package lsp-grammarly)
 (use-package websocket
   :straight (:build t))
+
+(setq jiralib-url "https://vugomars.atlassian.net")
 
 (use-package company
   :straight (:build t)
@@ -3000,9 +3006,11 @@ Spell Commands^^           Add To Dictionary^^              Other
   (dap-ui-controls-mode 1)
 
   (require 'dap-lldb)
+  (require 'dap-node)
   (require 'dap-gdb-lldb)
 
   (dap-gdb-lldb-setup)
+  (dap-node-setup)
   (dap-register-debug-template
    "Rust::LLDB Run Configuration"
    (list :type "lldb"
