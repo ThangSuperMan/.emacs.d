@@ -2970,6 +2970,11 @@ Spell Commands^^           Add To Dictionary^^              Other
     "k" #'lsp-ui-pook--select-prev
     "l" #'lsp-ui-pook--select-next-file))
 
+(defun dqv/lsp-workspace-remove-missing-projects ()
+  (interactive)
+  (dolist (dead-project (seq-filter (lambda (x) (not (file-directory-p x))) (lsp-session-folders (lsp-session))))
+    (lsp-workspace-folders-remove dead-project)))
+
 (use-package lsp-ivy
   :straight (:build t)
   :defer t
@@ -3707,6 +3712,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :mode ("\\.rs\\'" . rustic-mode)
   :hook (rustic-mode-local-vars . rustic-setup-lsp)
   :hook (rustic-mode . lsp-deferred)
+  :hook (rustic-mode . eglot-ensure)
   :init
   (with-eval-after-load 'org
     (defalias 'org-babel-execute:rust #'org-babel-execute:rustic)
@@ -3956,6 +3962,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   :hook (typescript-tsx-mode . rainbow-delimiters-mode)
   :hook (typescript-tsx-mode . lsp-deferred)
   :hook (typescript-tsx-mode . prettier-js-mode)
+  :hook (typescript-tsx-mode . eglot-ensure)
   :commands typescript-tsx-mode
   :after flycheck
   :init
@@ -3972,7 +3979,7 @@ Spell Commands^^           Add To Dictionary^^              Other
   (dqv/major-leader-key
     :packages 'typescript-mode
     :keymaps '(typescript-mode-map typescript-tsx-mode-map)
-    "n" '(:keymap npm-mode-command-keymap :which-key "npm"))
+    "n" '(:keymap npm-mode-command-keymap :which-key "pnpm"))
   :config
   (setq typescript-indent-level 2)
   (with-eval-after-load 'flycheck
